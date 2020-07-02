@@ -8,8 +8,8 @@
 // @include             https://beta.waze.com/*/editor*
 // @copyright           Vinkoy, ragacs
 // @namespace    	https://github.com/waze-ua/wme_levelreset
-// @updateURL           https://github.com/waze-ua/wme_levelreset/raw/master/wme-placenames-russian.js
-// @downloadURL         https://github.com/waze-ua/wme_levelreset/raw/master/wme-placenames-russian.js
+// @updateURL           https://github.com/waze-ua/WME-PlaceNames-Russian/raw/master/wme-placenames-russian.js
+// @downloadURL         https://github.com/waze-ua/WME-PlaceNames-Russian/raw/master/wme-placenames-russian.js
 // @grant               none
 // ==/UserScript==
 
