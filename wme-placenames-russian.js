@@ -1,15 +1,15 @@
 // ==UserScript==
-// @name       WME PlaceNames Russian (temporary fork)
+// @name       WME PlaceNames Russian (waze-ua fork)
 // @version    0.80
-// @description  Show area and point place names in WME, color and highlight places by type and properties (temporary fork)
+// @description  Show area and point place names in WME, color and highlight places by type and properties (waze-ua fork)
 // @include             https://www.waze.com/editor*
 // @include             https://www.waze.com/*/editor*
 // @include             https://beta.waze.com/editor*
 // @include             https://beta.waze.com/*/editor*
 // @copyright           Vinkoy, ragacs
-// @namespace    	https://github.com/waze-ua/wme_levelreset
-// @updateURL           https://github.com/waze-ua/WME-PlaceNames-Russian/raw/master/wme-placenames-russian.js
-// @downloadURL         https://github.com/waze-ua/WME-PlaceNames-Russian/raw/master/wme-placenames-russian.js
+// @namespace    	waze-ua
+// @updateURL           https://raw.githubusercontent.com/waze-ua/WME-PlaceNames-Russian/master/wme-placenames-russian.js
+// @downloadURL         https://raw.githubusercontent.com/waze-ua/WME-PlaceNames-Russian/master/wme-placenames-russian.js
 // @grant               none
 // ==/UserScript==
 
