@@ -1,17 +1,23 @@
 // ==UserScript==
-// @name       WME PlaceNames Russian (waze-ua fork)
-// @version    0.80
+// @name         WME PlaceNames Russian (waze-ua fork)
+// @version      0.80.1
 // @description  Show area and point place names in WME, color and highlight places by type and properties (waze-ua fork)
-// @include             https://www.waze.com/editor*
-// @include             https://www.waze.com/*/editor*
-// @include             https://beta.waze.com/editor*
-// @include             https://beta.waze.com/*/editor*
-// @copyright           Vinkoy, ragacs
-// @namespace    	waze-ua
-// @updateURL           https://github.com/waze-ua/WME-PlaceNames-Russian/raw/master/wme-placenames-russian.user.js
-// @downloadURL         https://github.com/waze-ua/WME-PlaceNames-Russian/raw/master/wme-placenames-russian.user.js
-// @grant               none
+// @include      https://www.waze.com/editor*
+// @include      https://www.waze.com/*/editor*
+// @include      https://beta.waze.com/editor*
+// @include      https://beta.waze.com/*/editor*
+// @copyright    Vinkoy, ragacs
+// @namespace    waze-ua
+// @updateURL    https://raw.githubusercontent.com/waze-ua/WME-PlaceNames-Russian/master/wme-placenames-russian.user.js
+// @downloadURL  https://raw.githubusercontent.com/waze-ua/WME-PlaceNames-Russian/master/wme-placenames-russian.user.js
+// @grant        none
 // ==/UserScript==
+
+/* global W */
+/* global $ */
+/* global OpenLayers */
+/* global require */
+/* global I18n */
 
 var wmepn_translations =
 {
@@ -339,9 +345,9 @@ function wmepn_showLandmarkNames() {
       if(nameFilter.length === 0)
           return true; // show all when no filter entered
       if(nameFilterRegEx === null)
-      	return (name.indexOf(nameFilter) >= 0);
+          return (name.indexOf(nameFilter) >= 0);
       else
-      	return nameFilterRegEx.test(name);
+          return nameFilterRegEx.test(name);
   };
 
   var drawnNames = 0;
@@ -355,7 +361,7 @@ function wmepn_showLandmarkNames() {
     var houseNumber = venue.attributes.houseNumber;
     var trimmedName = isRH ? houseNumber : venue.attributes.name.trim();
     var noTrName = (trimmedName.length == 0);
-    if(showLockLevel) trimmedName +=  (noTrName ? "" : "\n") + "[L" + (venue.attributes.lockRank+1) + "]";
+    if(showLockLevel) trimmedName += (noTrName ? "" : "\n") + "[L" + (venue.attributes.lockRank+1) + "]";
     if (poly !== null) {
       var venueStreet = streets.getObjectById(venue.attributes.streetID);
       var haveNoName = (isRH ? (houseNumber.length == 0) : noTrName);
@@ -366,7 +372,7 @@ function wmepn_showLandmarkNames() {
         if(showNames && (showAreas || showPoints || showResidentials) && (limitNames == 0 || drawnNames < limitNames)
             && (map.zoom >= wmepn_getId('_zoomLevel').value))
         {
-		    var wrappedText = wmepn_wordWrap(trimmedName, 30);
+            var wrappedText = wmepn_wordWrap(trimmedName, 30);
             var addressText = "";
 
             if(showAddresses && ( showAreas && isArea || showPoints && isPoint || showResidentials && isRH) )
@@ -386,9 +392,9 @@ function wmepn_showLandmarkNames() {
                 var bounds = venue.geometry.bounds;
                 var pt;
                 //if(bounds.getWidth() * bounds.getHeight() * .3 > venue.geometry.getArea() && venue.attributes.entryExitPoints.length > 0)
-                //	pt = venue.attributes.entryExitPoints[0].point;
+                //    pt = venue.attributes.entryExitPoints[0].point;
                 //else
-                	pt = venue.geometry.getCentroid();
+                    pt = venue.geometry.getCentroid();
                 var textFeature = new OpenLayers.Feature.Vector( pt, {labelText: wrappedText, fontColor: '#F0F0F0', pointRadius: 0 });
                 labelFeatures.push(textFeature);
 
@@ -400,7 +406,7 @@ function wmepn_showLandmarkNames() {
                 }
                 wmepn_NameLayer.addFeatures(labelFeatures);
                 drawnNames++;
-        	}
+            }
             if(showPoints && isPoint && !isRH && filterMatched )
             {
                 // Add label texts
@@ -453,10 +459,10 @@ function wmepn_showLandmarkNames() {
                 var wcp=document.getElementsByClassName('additional-attributes list-unstyled side-panel-section');
                 if (wcp)
                 {
-                  var li=document.createElement("LI");
-                  li.setAttribute('id', 'WME.PlaceNames-Square');
-                  wcp[0].appendChild(li);
-                  area_poi=document.getElementById('WME.PlaceNames-Square');
+                    var li=document.createElement("LI");
+                    li.setAttribute('id', 'WME.PlaceNames-Square');
+                    wcp[0].appendChild(li);
+                    area_poi=document.getElementById('WME.PlaceNames-Square');
                 }
             }
 
@@ -478,8 +484,8 @@ function wmepn_showLandmarkNames() {
 
         // Production polygons: #d191d6, Beta editor polygons: #c290c6
         if ((poly.getAttribute("fill") == "#d191d6" || poly.getAttribute("fill") == "#c290c6") && poly.getAttribute("stroke-opacity") == 1) {
-        var categories   = venue.attributes.categories;
-		var colored = false;
+        var categories = venue.attributes.categories;
+        var colored = false;
 
         if(colorLandmarks)
         {
@@ -502,7 +508,7 @@ function wmepn_showLandmarkNames() {
                            categories.indexOf("SEA_LAKE_POOL") > -1) {
                       poly.setAttribute("fill","#09f");
                       poly.setAttribute("stroke","#06c");
-	                  colored = true;
+                      colored = true;
                   }
 
                   // park/grass/trees = green
@@ -512,7 +518,7 @@ function wmepn_showLandmarkNames() {
                            categories.indexOf("GOLF_COURSE") > -1) {
                       poly.setAttribute("fill","#4f4");
                       poly.setAttribute("stroke","#6a6");
-	                  colored = true;
+                      colored = true;
                   }
         }
 
@@ -564,8 +570,8 @@ function wmepn_showLandmarkNames() {
             poly.setAttribute("stroke-dasharray","4 7");
             colored = true;
         }
-		// highlight places which have different name and HN
-		else if ( hiliteDifHN && (colored == false) && (map.zoom >= wmepn_getId('_zoomLevel').value) && hasHN && !haveNoName &&
+        // highlight places which have different name and HN
+        else if ( hiliteDifHN && (colored == false) && (map.zoom >= wmepn_getId('_zoomLevel').value) && hasHN && !haveNoName &&
             ((venue.attributes.categories[0] === "OTHER") || (venue.attributes.categories[0] === "PROFESSIONAL_AND_PUBLIC"))
             && ( !(houseNumber == venue.attributes.name.trim() || houseNumber == venue.attributes.name.trim().split(',')[0]) ) )
         {
@@ -581,21 +587,21 @@ function wmepn_showLandmarkNames() {
   {
     for (var mark in W.model.mapComments.objects)
     {
-    var comment = W.model.mapComments.get(mark);
+    var comment = W.model.mapComments.getObjectById(mark);
     var poly = wmepn_getId(comment.geometry.id);
     var isPoint = comment.geometry.toString().match(/^POINT/);
     var isArea = comment.geometry.toString().match(/^POLYGON/);
     var isComment = comment.type === "mapComment";
     var trimmedName = comment.attributes.subject;
     var noTrName = (trimmedName.length == 0);
-    if(showLockLevel) trimmedName +=  (noTrName ? "" : "\n") + "[L" + (comment.attributes.lockRank+1) + "]";
+    if(showLockLevel) trimmedName += (noTrName ? "" : "\n") + "[L" + (comment.attributes.lockRank+1) + "]";
     if (poly !== null) {
       var haveNoName = noTrName;
 
         if(showComments && (limitNames == 0 || drawnNames < limitNames)
             && (map.zoom >= wmepn_getId('_zoomLevel').value))
         {
-		    var wrappedText = wmepn_wordWrap(trimmedName, 30);
+            var wrappedText = wmepn_wordWrap(trimmedName, 30);
             var commentBody = "";
 
             if(showAddresses && ( showComments && isComment) )
@@ -626,7 +632,7 @@ function wmepn_showLandmarkNames() {
                 }
                 wmepn_NameLayer.addFeatures(labelFeatures);
                 drawnNames++;
-        	}
+            }
 
             if(showComments && ( (showPoints && isPoint) || (!showAreas && !showPoints) ) && filterMatched )
             {
@@ -724,7 +730,7 @@ function initialiseLandmarkNames()
 
   // Some internationalization
   I18n.translations[I18n.locale].wmepn = wmepn_translations[I18n.locale];
-  if(wmepn_translations[I18n.locale] === undefined) I18n.translations[I18n.locale].wmepn = wmepn_translations[I18n.locale];
+  if(wmepn_translations[I18n.locale] === undefined) I18n.translations[I18n.locale].wmepn = wmepn_translations[I18n.locale]; //FIXME !!!
   I18n.translations[I18n.locale].layers.name.__DrawPlaceNames = 'Place Names Rus';
 
   // add new box to left of the map
@@ -733,55 +739,55 @@ function initialiseLandmarkNames()
   var translator="";
   addon.id = "landmarkname-addon";
 
-  if(I18n.locale != I18n.locale)
-    translator  = 'title="'+I18n.t("wmepn.translator")+'"';
+  if(I18n.locale != I18n.locale) //FIXME !!!
+    translator = 'title="'+I18n.t("wmepn.translator")+'"';
 
   //if (navigator.userAgent.match(/Chrome/)) { }
-  addon.innerHTML  = '<b>'
-                   + '<a href="https://www.W.com/forum/viewtopic.php?f=819&t=116843" target="_blank" ' + translator + '>WME PlaceNames</a></b> &nbsp; v' + GM_info.script.version;
+  addon.innerHTML = '<b>'
+                  + '<a href="https://www.waze.com/forum/viewtopic.php?f=819&t=116843" target="_blank" ' + translator + '>' + GM_info.script.name + '</a></b> &nbsp; v' + GM_info.script.version;
   if(wmepn_translations[I18n.locale] === undefined)
-      addon.innerHTML  += ' <small>[<a href="https://www.W.com/forum/viewtopic.php?f=819&t=116843&p=1302802#p1302802" target="_blank">translate me!</a>]</small>';
+      addon.innerHTML += ' <small>[<a href="https://www.waze.com/forum/viewtopic.php?f=819&t=116843&p=1302802#p1302802" target="_blank">translate me!</a>]</small>';
 
 
   // highlight landmarks
-  section = document.createElement('p');
+  var section = document.createElement('p');
   section.style.padding = "8px 16px";
   //section.style.textIndent = "-16px";
   section.id = "nameLandmarks";
-section.innerHTML  = '<div title="'+I18n.t("wmepn.enable_script_tooltip")+'"><input type="checkbox" id="_cbLandmarkNamesEnable" /> <b>'+I18n.t("wmepn.enable_script")+'</b></div>'
-  					+  '<div title="'+I18n.t("wmepn.color_places_tooltip")+'"><input type="checkbox" id="_cbLandmarkColors" /> <b>'+I18n.t("wmepn.color_places")+'</b></div>'
-  					+  '<div title="'+I18n.t("wmepn.highlight_places_tooltip")+'"><input type="checkbox" id="_cbLandmarkHiliteNoName"/> <b>'+I18n.t("wmepn.highlight_places")+'</b></div>'
-            +  '<div title="'+I18n.t("wmepn.highlight_address_tooltip")+'"><input type="checkbox" id="_cbLandmarkHiliteNoAddress"/> <b>'+I18n.t("wmepn.highlight_address")+'</b></div>'
-            +  '<div title="'+I18n.t("wmepn.highlight_dif_address_tooltip")+'"><input type="checkbox" id="_cbLandmarkHiliteDifHN"/> <b>'+I18n.t("wmepn.highlight_dif_address")+'</b></div>'
-            +  '<div title="'+I18n.t("wmepn.highlight_linked_tooltip")+'"><input type="checkbox" id="_cbShowLinked" /> <b>'+I18n.t("wmepn.highlight_linked")+'</b></div>'
-            +  '<div title="'+I18n.t("wmepn.highlight_not_linked_tooltip")+'"><input type="checkbox" id="_cbShowNotLinked" /> <b>'+I18n.t("wmepn.highlight_not_linked")+'</b></div>'
-            +  '<div title="'+I18n.t("wmepn.highlight_small_tooltip")+'"><input type="checkbox" id="_cbLandmarkHiliteSmall"/> <b>'+I18n.t("wmepn.highlight_small")+'</b><input id="_minArea" style="width: 40px;"/><b>м&#178;</b></div>'
-            +  '<div title="'+I18n.t("wmepn.show_address_tooltip")+'"><input type="checkbox" id="_cbLandmarkShowAddresses"/> <b>'+I18n.t("wmepn.show_address")+'</b></div>'
-            +  '<div title="'+I18n.t("wmepn.show_tooltip")+'"><b>'+I18n.t("wmepn.show")+':</b></div>'
-  							+ '<div title="'+I18n.t("wmepn.show")+' '+I18n.t("wmepn.option_area")+'" style="padding-left: 20px;"><input type="checkbox" id="_cbShowArea"> '+I18n.t("wmepn.option_area")+'</div>'
-  							+ '<div title="'+I18n.t("wmepn.show")+' '+I18n.t("wmepn.option_point")+'" style="padding-left: 20px;"><input type="checkbox" id="_cbShowPoi"> '+I18n.t("wmepn.option_point")+'</div>'
-  							+ '<div title="'+I18n.t("wmepn.show")+' '+I18n.t("wmepn.option_residential")+'" style="padding-left: 20px;"><input type="checkbox" id="_cbShowRH"> '+I18n.t("wmepn.option_residential")+'</div>'
-                            + '<div title="'+I18n.t("wmepn.show")+' '+I18n.t("wmepn.option_comments")+'" style="padding-left: 20px;"><input type="checkbox" id="_cbShowComment"> '+I18n.t("wmepn.option_comments")+'</div>'
-  					+  '<div title="'+I18n.t("wmepn.filter_tooltip")+'"><b>'+I18n.t("wmepn.filter")+':</b><input type="text" id="_inLandmarkNameFilter"/></div>'
-                    +  '<div title="'+I18n.t("wmepn.show_locklevel_tooltip")+'"><input type="checkbox" id="_cbLandmarkLockLevel" /> <b>'+I18n.t("wmepn.show_locklevel")+'</b></div>'
-  					+  '<div title="'+I18n.t("wmepn.stop_over_tooltip")+'"><b>'+I18n.t("wmepn.stop_over")+'</b> <select id="_seLandmarkLimit">'
-  							+ '<option value="0">'+I18n.t("wmepn.option_unlimited")+'</option>'
-  							+ '<option value="500">500</option>'
-  							+ '<option value="200">200</option>'
-  							+ '<option value="100">100</option>'
-  							+ '<option value="50">50</option>'
-  							+ '<option value="25">25</option>'
-  							+ '<option value="10">10</option>'
+  section.innerHTML = '<div title="'+I18n.t("wmepn.enable_script_tooltip")+'"><input type="checkbox" id="_cbLandmarkNamesEnable" /> <b>'+I18n.t("wmepn.enable_script")+'</b></div>'
+            + '<div title="'+I18n.t("wmepn.color_places_tooltip")+'"><input type="checkbox" id="_cbLandmarkColors" /> <b>'+I18n.t("wmepn.color_places")+'</b></div>'
+            + '<div title="'+I18n.t("wmepn.highlight_places_tooltip")+'"><input type="checkbox" id="_cbLandmarkHiliteNoName"/> <b>'+I18n.t("wmepn.highlight_places")+'</b></div>'
+            + '<div title="'+I18n.t("wmepn.highlight_address_tooltip")+'"><input type="checkbox" id="_cbLandmarkHiliteNoAddress"/> <b>'+I18n.t("wmepn.highlight_address")+'</b></div>'
+            + '<div title="'+I18n.t("wmepn.highlight_dif_address_tooltip")+'"><input type="checkbox" id="_cbLandmarkHiliteDifHN"/> <b>'+I18n.t("wmepn.highlight_dif_address")+'</b></div>'
+            + '<div title="'+I18n.t("wmepn.highlight_linked_tooltip")+'"><input type="checkbox" id="_cbShowLinked" /> <b>'+I18n.t("wmepn.highlight_linked")+'</b></div>'
+            + '<div title="'+I18n.t("wmepn.highlight_not_linked_tooltip")+'"><input type="checkbox" id="_cbShowNotLinked" /> <b>'+I18n.t("wmepn.highlight_not_linked")+'</b></div>'
+            + '<div title="'+I18n.t("wmepn.highlight_small_tooltip")+'"><input type="checkbox" id="_cbLandmarkHiliteSmall"/> <b>'+I18n.t("wmepn.highlight_small")+'</b><input id="_minArea" style="width: 40px;"/><b>м&#178;</b></div>'
+            + '<div title="'+I18n.t("wmepn.show_address_tooltip")+'"><input type="checkbox" id="_cbLandmarkShowAddresses"/> <b>'+I18n.t("wmepn.show_address")+'</b></div>'
+            + '<div title="'+I18n.t("wmepn.show_tooltip")+'"><b>'+I18n.t("wmepn.show")+':</b></div>'
+            + '<div title="'+I18n.t("wmepn.show")+' '+I18n.t("wmepn.option_area")+'" style="padding-left: 20px;"><input type="checkbox" id="_cbShowArea"> '+I18n.t("wmepn.option_area")+'</div>'
+            + '<div title="'+I18n.t("wmepn.show")+' '+I18n.t("wmepn.option_point")+'" style="padding-left: 20px;"><input type="checkbox" id="_cbShowPoi"> '+I18n.t("wmepn.option_point")+'</div>'
+            + '<div title="'+I18n.t("wmepn.show")+' '+I18n.t("wmepn.option_residential")+'" style="padding-left: 20px;"><input type="checkbox" id="_cbShowRH"> '+I18n.t("wmepn.option_residential")+'</div>'
+                    + '<div title="'+I18n.t("wmepn.show")+' '+I18n.t("wmepn.option_comments")+'" style="padding-left: 20px;"><input type="checkbox" id="_cbShowComment"> '+I18n.t("wmepn.option_comments")+'</div>'
+                    + '<div title="'+I18n.t("wmepn.filter_tooltip")+'"><b>'+I18n.t("wmepn.filter")+':</b><input type="text" id="_inLandmarkNameFilter"/></div>'
+                    + '<div title="'+I18n.t("wmepn.show_locklevel_tooltip")+'"><input type="checkbox" id="_cbLandmarkLockLevel" /> <b>'+I18n.t("wmepn.show_locklevel")+'</b></div>'
+                    + '<div title="'+I18n.t("wmepn.stop_over_tooltip")+'"><b>'+I18n.t("wmepn.stop_over")+'</b> <select id="_seLandmarkLimit">'
+                            + '<option value="0">'+I18n.t("wmepn.option_unlimited")+'</option>'
+                            + '<option value="500">500</option>'
+                            + '<option value="200">200</option>'
+                            + '<option value="100">100</option>'
+                            + '<option value="50">50</option>'
+                            + '<option value="25">25</option>'
+                            + '<option value="10">10</option>'
                             +'</select></div>'
-                    +   '<div><small>'+I18n.t("wmepn.showing")+' <span id="_stLandmarkNumber"></span> <span id="_stLandmarkHNNumber"></span></small></div>'
-  +  '<div title="'+I18n.t("wmepn.show_zool_tooltip")+'"><b>'+I18n.t("wmepn.show_zool")+'</b><input type="number" id="_zoomLevel"/></div>';
+                    + '<div><small>'+I18n.t("wmepn.showing")+' <span id="_stLandmarkNumber"></span> <span id="_stLandmarkHNNumber"></span></small></div>'
+            + '<div title="'+I18n.t("wmepn.show_zool_tooltip")+'"><b>'+I18n.t("wmepn.show_zool")+'</b><input type="number" id="_zoomLevel"/></div>';
   addon.appendChild(section);
 
   var userTabs = wmepn_getId('user-info');
   var navTabs = getElementsByClassName('nav-tabs', userTabs)[0];
   var tabContent = getElementsByClassName('tab-content', userTabs)[0];
 
-  newtab = document.createElement('li');
+  var newtab = document.createElement('li');
   newtab.innerHTML = '<a href="#sidepanel-landmarknames" data-toggle="tab">PlaceNames Rus</a>';
   navTabs.appendChild(newtab);
 
@@ -806,7 +812,7 @@ section.innerHTML  = '<div title="'+I18n.t("wmepn.enable_script_tooltip")+'"><in
     wmepn_getId('_cbShowPoi').onclick = wmepn_resetLandmarks;
     wmepn_getId('_cbShowRH').onclick = wmepn_resetLandmarks;
     wmepn_getId('_cbShowComment').onclick = wmepn_resetLandmarks;
-    wmepn_getId('_cbShowLinked').onclick    = function(){ if (wmepn_getId('_cbShowLinked').checked) wmepn_getId('_cbShowNotLinked').checked = false; wmepn_resetLandmarks(); };
+    wmepn_getId('_cbShowLinked').onclick = function(){ if (wmepn_getId('_cbShowLinked').checked) wmepn_getId('_cbShowNotLinked').checked = false; wmepn_resetLandmarks(); };
     wmepn_getId('_cbShowNotLinked').onclick = function(){ if (wmepn_getId('_cbShowNotLinked').checked) wmepn_getId('_cbShowLinked').checked = false; wmepn_resetLandmarks(); };
 
     // Create PlaceName layer
@@ -837,7 +843,7 @@ section.innerHTML  = '<div title="'+I18n.t("wmepn.enable_script_tooltip")+'"><in
             displayInLayerSwitcher: true,
             uniqueName: "__DrawPlaceNames",
             shortcutKey: "S+n",
-			accelerator: "toggle" + lname.replace(/\s+/g,''),
+            accelerator: "toggle" + lname.replace(/\s+/g,''),
             styleMap: new OpenLayers.StyleMap(style)
         });
         nameLayer.setVisibility(true);
@@ -856,49 +862,48 @@ section.innerHTML  = '<div title="'+I18n.t("wmepn.enable_script_tooltip")+'"><in
     console.log("WME LandmarkNames: loading options");
     options = JSON.parse(localStorage.WMELandmarkNamesScript);
 
-    wmepn_getId('_cbLandmarkColors').checked   	    = options[1];
-    wmepn_getId('_cbLandmarkHiliteNoName').checked  = options[2];
+    wmepn_getId('_cbLandmarkColors').checked = options[1];
+    wmepn_getId('_cbLandmarkHiliteNoName').checked = options[2];
     if(options[3] !== undefined)
-        wmepn_getId('_cbShowArea').checked    	    = options[3];
-	wmepn_NameLayer.setVisibility(options[4]);
+        wmepn_getId('_cbShowArea').checked = options[3];
+    wmepn_NameLayer.setVisibility(options[4]);
     if(options[5] !== undefined)
-        wmepn_getId('_cbLandmarkNamesEnable').checked   = options[5];
+        wmepn_getId('_cbLandmarkNamesEnable').checked = options[5];
     else wmepn_NameLayer.setVisibility(true);
     if(options[6] !== undefined)
-        wmepn_getId('_inLandmarkNameFilter').value		= options[6];
+        wmepn_getId('_inLandmarkNameFilter').value = options[6];
     if(options[7] !== undefined)
-        wmepn_getId('_cbLandmarkLockLevel').checked     = options[7];
+        wmepn_getId('_cbLandmarkLockLevel').checked = options[7];
     if(options[8] !== undefined)
-        wmepn_getId('_seLandmarkLimit').value     = options[8];
+        wmepn_getId('_seLandmarkLimit').value = options[8];
     else
-        wmepn_getId('_seLandmarkLimit').value     = 100;
+        wmepn_getId('_seLandmarkLimit').value = 100;
     if(options[9] !== undefined)
-        wmepn_getId('_zoomLevel').value		= options[9];
+        wmepn_getId('_zoomLevel').value = options[9];
     else
-        wmepn_getId('_zoomLevel').value     = 4;
+        wmepn_getId('_zoomLevel').value = 4;
     if(options[10] !== undefined)
         wmepn_getId('_cbLandmarkHiliteSmall').checked = options[10];
     if(options[11] !== undefined)
         wmepn_getId('_cbLandmarkHiliteNoAddress').checked = options[11];
     if(options[12] !== undefined)
-        wmepn_getId('_cbLandmarkShowAddresses').checked     = options[12];
+        wmepn_getId('_cbLandmarkShowAddresses').checked = options[12];
     if(options[13] !== undefined)
         wmepn_getId('_cbLandmarkHiliteDifHN').checked = options[13];
     if(options[14] !== undefined)
         wmepn_getId('_minArea').value = options[14];
     else
-        wmepn_getId('_minArea').value     = 650;
+        wmepn_getId('_minArea').value = 650;
     if(options[15] !== undefined)
-        wmepn_getId('_cbShowPoi').checked    	    = options[15];
+        wmepn_getId('_cbShowPoi').checked = options[15];
     if(options[16] !== undefined)
-        wmepn_getId('_cbShowRH').checked    	    = options[16];
+        wmepn_getId('_cbShowRH').checked = options[16];
     if(options[17] !== undefined)
-        wmepn_getId('_cbShowLinked').checked        = options[17];
+        wmepn_getId('_cbShowLinked').checked = options[17];
     if(options[18] !== undefined)
-        wmepn_getId('_cbShowNotLinked').checked     = options[18];
+        wmepn_getId('_cbShowNotLinked').checked = options[18];
     if(options[19] !== undefined)
-        wmepn_getId('_cbShowComment').checked    	    = options[19];
-
+        wmepn_getId('_cbShowComment').checked = options[19];
 
   } else {
     wmepn_getId('_cbLandmarkColors').checked = true;
@@ -908,10 +913,10 @@ section.innerHTML  = '<div title="'+I18n.t("wmepn.enable_script_tooltip")+'"><in
     wmepn_getId('_cbLandmarkHiliteSmall').checked = true;
     wmepn_getId('_cbLandmarkShowAddresses').checked = true;
     wmepn_getId('_cbShowArea').checked = true;
-    wmepn_getId('_cbShowPoi').checked  = true;
-    wmepn_getId('_cbShowRH').checked   = true;
-    wmepn_getId('_cbShowComment').checked   = true;
-	wmepn_NameLayer.setVisibility(true);
+    wmepn_getId('_cbShowPoi').checked = true;
+    wmepn_getId('_cbShowRH').checked = true;
+    wmepn_getId('_cbShowComment').checked = true;
+    wmepn_NameLayer.setVisibility(true);
     wmepn_getId('_cbLandmarkNamesEnable').checked = true;
     wmepn_getId('_cbLandmarkLockLevel').checked = false;
     wmepn_getId('_cbShowLinked').checked = false;
@@ -939,9 +944,9 @@ section.innerHTML  = '<div title="'+I18n.t("wmepn.enable_script_tooltip")+'"><in
     wmepn_getId('_cbLandmarkHiliteDifHN').disabled = true;
     wmepn_getId('_cbLandmarkHiliteSmall').checked = true;
     wmepn_getId('_cbShowArea').checked = true;
-    wmepn_getId('_cbShowPoi').checked  = true;
-    wmepn_getId('_cbShowRH').checked   = true;
-    wmepn_getId('_cbShowComment').checked   = true;
+    wmepn_getId('_cbShowPoi').checked = true;
+    wmepn_getId('_cbShowRH').checked = true;
+    wmepn_getId('_cbShowComment').checked = true;
     wmepn_getId('_cbLandmarkLockLevel').disabled = true;
     wmepn_getId('_cbShowLinked').disabled = true;
     wmepn_getId('_cbShowNotLinked').disabled = true;
