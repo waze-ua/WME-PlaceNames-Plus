@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         WME PlaceNames Russian (waze-ua fork)
+// @name         WME PlaceNames PLUS
 // @version      0.80.1
 // @description  Show area and point place names in WME, color and highlight places by type and properties (waze-ua fork)
 // @include      https://www.waze.com/editor*
@@ -155,7 +155,7 @@ var wmepn_translations =
     highlight_address_tooltip: "ППідсвічувати POI, у яких не заповнени поля адреси: вулиця і номер будинку (зелений пунктир)",
     highlight_dif_address: "Ім'я не збігається з номером будинку",
     highlight_dif_address_tooltip: "Перевірка відповідності імені контура з номером будинку в адресі. Підсвічує POI (Інша / контур будівлі та Громадське місце), у яких ім'я не збігається з номером будинку в адресі (червоний пунктир)",
-    highlight_small: "POI з площею менше",
+    highlight_small: "POI з площею менше ",
     highlight_small_tooltip: "Підсвічування POI з площею менше зазначеної (червоний). Маленькі POI можуть не відображатися в застосунку",
     highlight_linked: "Лінковані POI",
     highlight_linked_tooltip: "Підсвічувати POI, що мають прив'язку до адреси Google (блакитний)",
@@ -176,7 +176,7 @@ var wmepn_translations =
     stop_over: "Кількість відображуваних імен",
     stop_over_tooltip: "Обмеження кількості відображуваних імен на карті",
     option_unlimited: "Без обмеження",
-    show_zool: "Масштаб",
+    show_zool: "Масштаб ",
     show_zool_tooltip: "Мінімальний масштаб для відображення імен",
     showing: "Відображається",
     place_names_and: "імен POI та",
@@ -731,7 +731,7 @@ function initialiseLandmarkNames()
   // Some internationalization
   I18n.translations[I18n.locale].wmepn = wmepn_translations[I18n.locale];
   if(wmepn_translations[I18n.locale] === undefined) I18n.translations[I18n.locale].wmepn = wmepn_translations[I18n.locale]; //FIXME !!!
-  I18n.translations[I18n.locale].layers.name.__DrawPlaceNames = 'Place Names Rus';
+  I18n.translations[I18n.locale].layers.name.__DrawPlaceNames = 'Place Names PLUS';
 
   // add new box to left of the map
   var addon = document.createElement('section');
