@@ -788,7 +788,7 @@ function initialiseLandmarkNames()
   var tabContent = getElementsByClassName('tab-content', userTabs)[0];
 
   var newtab = document.createElement('li');
-  newtab.innerHTML = '<a href="#sidepanel-landmarknames" data-toggle="tab">PlaceNames Rus</a>';
+  newtab.innerHTML = '<a href="#sidepanel-landmarknames" data-toggle="tab">PlaceNames PLUS</a>';
   navTabs.appendChild(newtab);
 
   addon.id = "sidepanel-landmarknames";
