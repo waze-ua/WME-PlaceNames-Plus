@@ -1,1 +1,1 @@
-# WME-PlaceNames-Russian
+# WME-PlaceNames-Plus
