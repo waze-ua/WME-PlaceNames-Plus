@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         WME PlaceNames PLUS
-// @version      0.81.1
+// @version      0.81.2
 // @description  Show area and point place names in WME, color and highlight places by type and properties (waze-ua fork)
 // @include      https://www.waze.com/editor*
 // @include      https://www.waze.com/*/editor*
@@ -723,8 +723,8 @@ function wmepn_getId(node) {
 function initialiseLandmarkNames()
 {
     var userTabs = wmepn_getId('user-info');
-    var navTabs = userTabs.querySelector('.nav-tabs');
-    var tabContent = userTabs.querySelector('.tab-content');
+    var navTabs = userTabs ? userTabs.querySelector('.nav-tabs') : null;
+    var tabContent = userTabs ? userTabs.querySelector('.tab-content') : null;
 
     if (!userTabs || !navTabs || !tabContent) {
         setTimeout(initialiseLandmarkNames, 800);
