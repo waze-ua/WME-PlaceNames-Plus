@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         WME PlaceNames PLUS
-// @version      0.81
+// @version      0.81.1
 // @description  Show area and point place names in WME, color and highlight places by type and properties (waze-ua fork)
 // @include      https://www.waze.com/editor*
 // @include      https://www.waze.com/*/editor*
@@ -722,8 +722,11 @@ function wmepn_getId(node) {
 
 function initialiseLandmarkNames()
 {
-    var editPanel = $("#edit-panel");
-    if (!editPanel) {
+    var userTabs = wmepn_getId('user-info');
+    var navTabs = userTabs.querySelector('.nav-tabs');
+    var tabContent = userTabs.querySelector('.tab-content');
+
+    if (!userTabs || !navTabs || !tabContent) {
         setTimeout(initialiseLandmarkNames, 800);
         return;
     }
@@ -731,17 +734,6 @@ function initialiseLandmarkNames()
   // global variables
   wmepn_betaMode = location.hostname.match(/editor-beta.waze.com/);
   wmepn_NameLayer = undefined;
-
-    // helper fn
-    function getElementsByClassName(classname, node) {
-      if(!node) node = document.getElementsByTagName("body")[0];
-      var a = [];
-      var re = new RegExp('\\b' + classname + '\\b');
-      var els = node.getElementsByTagName("*");
-      for (var i=0,j=els.length; i<j; i++)
-        if (re.test(els[i].className)) a.push(els[i]);
-      return a;
-    }
 
   // Some internationalization
   I18n.translations[I18n.locale].wmepn = wmepn_translations[I18n.locale];
@@ -797,10 +789,6 @@ function initialiseLandmarkNames()
                     + '<div><small>'+I18n.t("wmepn.showing")+' <span id="_stLandmarkNumber"></span> <span id="_stLandmarkHNNumber"></span></small></div>'
             + '<div title="'+I18n.t("wmepn.show_zool_tooltip")+'"><b>'+I18n.t("wmepn.show_zool")+'</b><input type="number" id="_zoomLevel"/></div>';
   addon.appendChild(section);
-
-  var userTabs = wmepn_getId('user-info');
-  var navTabs = getElementsByClassName('nav-tabs', userTabs)[0];
-  var tabContent = getElementsByClassName('tab-content', userTabs)[0];
 
   var newtab = document.createElement('li');
   newtab.innerHTML = '<a href="#sidepanel-landmarknames" data-toggle="tab">PlaceNames+</a>';
