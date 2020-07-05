@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         WME PlaceNames PLUS
-// @version      0.80.1
+// @version      0.81
 // @description  Show area and point place names in WME, color and highlight places by type and properties (waze-ua fork)
 // @include      https://www.waze.com/editor*
 // @include      https://www.waze.com/*/editor*
@@ -24,15 +24,15 @@ var wmepn_translations =
     "en":
     {
     enable_script: "Enable script",
-    enable_script_tooltip: "Toggle highlighting and place names layer\nUse the Layer selector or Shift+N hotkey to toggle names only",
+    enable_script_tooltip: "Toggle highlighting and place names layer\nUse the Layer selector or Shift+N hot key to toggle names only",
     color_places: "Color places",
     color_places_tooltip: "Color the places like WMECH does",
     highlight_places: "Highlight places without name/HN",
     highlight_places_tooltip: "Highlight public places without name and private places without house number (yellow)",
     highlight_address: "Places without address",
-    highlight_address_tooltip: "Highlight places without street or housenumber (dashed green)",
-    highlight_dif_address: "The name doesn't match the housenumber",
-    highlight_dif_address_tooltip: "Check if the name mathes the housenumber. Highlights (Other and Public places), where the name doesn't match the housenumber (dashed red)",
+    highlight_address_tooltip: "Highlight places without street or house number (dashed green)",
+    highlight_dif_address: "The name doesn't match the house number",
+    highlight_dif_address_tooltip: "Check if the name matches the house number. Highlights (Other and Public places), where the name doesn't match the house number (dashed red)",
     highlight_small: "Place area less than",
     highlight_small_tooltip: "Highlight places area less than specified (red). Small places may not be visible in app",
     highlight_linked: "Linked places",
@@ -152,7 +152,7 @@ var wmepn_translations =
     highlight_places: "POI без імені",
     highlight_places_tooltip: "Підсвічувати POI без імені (жовтий)",
     highlight_address: "POI без адреси",
-    highlight_address_tooltip: "ППідсвічувати POI, у яких не заповнени поля адреси: вулиця і номер будинку (зелений пунктир)",
+    highlight_address_tooltip: "ППідсвічувати POI, у яких не заповнені поля адреси: вулиця і номер будинку (зелений пунктир)",
     highlight_dif_address: "Ім'я не збігається з номером будинку",
     highlight_dif_address_tooltip: "Перевірка відповідності імені контура з номером будинку в адресі. Підсвічує POI (Інша / контур будівлі та Громадське місце), у яких ім'я не збігається з номером будинку в адресі (червоний пунктир)",
     highlight_small: "POI з площею менше ",
@@ -168,7 +168,7 @@ var wmepn_translations =
     option_area: "Області",
     option_point: "Точкові POI",
     option_residential: "АТ",
-    option_comments: "Комментарі",
+    option_comments: "Коментарі",
     filter: "Фільтр",
     filter_tooltip: "Фільтр відображення в назві (можна використовувати regex, наприклад / школа/i)",
     show_locklevel: "Відображати рівень блокування",
@@ -230,8 +230,17 @@ var wmepn_translations =
 /* bootstrap, will call initialiseLandmarkNames() */
 function bootstrapLandmarkNames()
 {
-  /* begin running the code! */
-  setTimeout(initialiseLandmarkNames, 999);
+    /* begin running the code! */
+    if (typeof W === "undefined" ||
+        typeof W.map === "undefined" ||
+        typeof W.selectionManager === "undefined" ||
+        typeof W.model.countries === "undefined" ||
+        typeof I18n === "undefined" ||
+        typeof I18n.translations === "undefined") {
+        setTimeout(bootstrapLandmarkNames, 700);
+        return;
+    }
+    initialiseLandmarkNames();
 }
 
 function wmepn_wordWrap(str, maxWidth) {
@@ -713,8 +722,14 @@ function wmepn_getId(node) {
 
 function initialiseLandmarkNames()
 {
+    var editPanel = $("#edit-panel");
+    if (!editPanel) {
+        setTimeout(initialiseLandmarkNames, 800);
+        return;
+    }
+
   // global variables
-  wmepn_betaMode = location.hostname.match(/editor-beta.W.com/);
+  wmepn_betaMode = location.hostname.match(/editor-beta.waze.com/);
   wmepn_NameLayer = undefined;
 
     // helper fn
@@ -788,7 +803,7 @@ function initialiseLandmarkNames()
   var tabContent = getElementsByClassName('tab-content', userTabs)[0];
 
   var newtab = document.createElement('li');
-  newtab.innerHTML = '<a href="#sidepanel-landmarknames" data-toggle="tab">PlaceNames PLUS</a>';
+  newtab.innerHTML = '<a href="#sidepanel-landmarknames" data-toggle="tab">PlaceNames+</a>';
   navTabs.appendChild(newtab);
 
   addon.id = "sidepanel-landmarknames";
@@ -926,10 +941,10 @@ function initialiseLandmarkNames()
     wmepn_getId('_minArea').value = 650;
   }
 
-    var layerItem = '<li><div class="controls-container toggler"><input class="layer-switcher-item_placenames_rus toggle" id="layer-switcher-item_placenames_rus" type="checkbox"><label for="layer-switcher-item_placenames_rus"><span class="label-text">PlaceNames Rus</span></label></div></li>';
+    var layerItem = '<li><div class="controls-container toggler"><input class="layer-switcher-item_placenames_plus toggle" id="layer-switcher-item_placenames_plus" type="checkbox"><label for="layer-switcher-item_placenames_plus"><span class="label-text">PlaceNames Plus</span></label></div></li>';
     $("#layer-switcher-group_places").parent().parent().children("ul.children").append(layerItem);
-    $("#layer-switcher-item_placenames_rus").click(function() { wmepn_NameLayer.setVisibility(!wmepn_NameLayer.getVisibility()); });
-    $("#layer-switcher-item_placenames_rus").prop("checked", wmepn_NameLayer.getVisibility());
+    $("#layer-switcher-item_placenames_plus").click(function() { wmepn_NameLayer.setVisibility(!wmepn_NameLayer.getVisibility()); });
+    $("#layer-switcher-item_placenames_plus").prop("checked", wmepn_NameLayer.getVisibility());
 
   if (typeof W.model.venues == "undefined") {
     wmepn_getId('_cbLandmarkColors').checked = false;
