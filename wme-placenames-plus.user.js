@@ -6,10 +6,10 @@
 // @include      https://www.waze.com/*/editor*
 // @include      https://beta.waze.com/editor*
 // @include      https://beta.waze.com/*/editor*
-// @copyright    Vinkoy, ragacs
+// @copyright    Vinkoy, ragacs, waze-ua
 // @namespace    waze-ua
-// @updateURL    https://raw.githubusercontent.com/waze-ua/WME-PlaceNames-Russian/master/wme-placenames-russian.user.js
-// @downloadURL  https://raw.githubusercontent.com/waze-ua/WME-PlaceNames-Russian/master/wme-placenames-russian.user.js
+// @updateURL    https://raw.githubusercontent.com/waze-ua/WME-PlaceNames-Plus/master/wme-placenames-plus.user.js
+// @downloadURL  https://raw.githubusercontent.com/waze-ua/WME-PlaceNames-Plus/master/wme-placenames-plus.user.js
 // @grant        none
 // ==/UserScript==
 
@@ -1004,7 +1004,7 @@ function initialiseLandmarkNames()
   map.events.register("mouseout", null, wmepn_showLandmarkNames);
   W.selectionManager.events.register("selectionchanged", null, wmepn_showLandmarkNames);
 
-  I18n.translations[I18n.locale].keyboard_shortcuts.groups['default'].members.WME_PlaceNames_enable = "Включить/выключить скрипт PlaceNames Russian";
+  I18n.translations[I18n.locale].keyboard_shortcuts.groups['default'].members.WME_PlaceNames_enable = "Включить/выключить скрипт PlaceNames Plus";
   W.accelerators.addAction("WME_PlaceNames_enable", {group: 'default'});
   W.accelerators.events.register("WME_PlaceNames_enable", null, enablePlaceNames);
   W.accelerators._registerShortcuts({ 'S+n' : "WME_PlaceNames_enable"});
