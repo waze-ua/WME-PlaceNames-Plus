@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         WME PlaceNames PLUS
-// @version      0.81.2
+// @version      0.82
 // @description  Show area and point place names in WME, color and highlight places by type and properties (waze-ua fork)
 // @include      https://www.waze.com/editor*
 // @include      https://www.waze.com/*/editor*
@@ -18,6 +18,12 @@
 /* global OpenLayers */
 /* global require */
 /* global I18n */
+
+// global variables
+//var wmepn_betaMode = location.hostname.match(/editor-beta.waze.com/);
+var wmepn_NameLayer;
+var wmepn_uniqueLayerName = "__PlaceNamesPlusLayer";
+var wmepn_scriptName = "Place Names +";
 
 var wmepn_translations =
 {
@@ -249,11 +255,13 @@ function wmepn_wordWrap(str, maxWidth) {
         return white.test(x.charAt(0));
     }
 
-    var newLineStr = "\n"; done = false; res = '';
+    var newLineStr = "\n";
+    var done = false;
+    var res = '';
     do {
-        found = false;
+        var found = false;
         // Inserts new line at first whitespace of the line
-        for (i = maxWidth - 1; i >= 0; i--) {
+        for (var i = maxWidth - 1; i >= 0; i--) {
             if (testWhite(str.charAt(i))) {
                 res = res + [str.slice(0, i), newLineStr].join('');
                 str = str.slice(i + 1);
@@ -306,6 +314,7 @@ function wmepn_showLandmarkNames() {
   var streets = W.model.streets;
   var map = W.map;
   var showNames = wmepn_NameLayer.getVisibility() && map.getLayersBy("uniqueName", "venues")[0].getVisibility();
+
   // if checkbox unticked, reset places to original style
   if (!showNames
      && !wmepn_getId('_cbLandmarkColors').checked
@@ -351,9 +360,9 @@ function wmepn_showLandmarkNames() {
   var nameFilterOptions = nameFilterArray[2];
   var nameFilterRegEx = (nameFilterArray.length > 1 ? new RegExp(nameFilter, nameFilterOptions) : null);
   var doFilter = function (name) {
-      if(nameFilter.length === 0)
+      if (nameFilter.length === 0)
           return true; // show all when no filter entered
-      if(nameFilterRegEx === null)
+      if (nameFilterRegEx === null)
           return (name.indexOf(nameFilter) >= 0);
       else
           return nameFilterRegEx.test(name);
@@ -398,7 +407,7 @@ function wmepn_showLandmarkNames() {
             {
                 // Add label texts
                 var labelFeatures = [];
-                var bounds = venue.geometry.bounds;
+                //var bounds = venue.geometry.bounds;
                 var pt;
                 //if(bounds.getWidth() * bounds.getHeight() * .3 > venue.geometry.getArea() && venue.attributes.entryExitPoints.length > 0)
                 //    pt = venue.attributes.entryExitPoints[0].point;
@@ -409,7 +418,7 @@ function wmepn_showLandmarkNames() {
 
                 if(showAddresses)
                 {
-                    var offsetY =  wmepn_getYoffset(words, wrappedText.length);
+                    var offsetY = wmepn_getYoffset(words, wrappedText.length);
                     var addrFeature = new OpenLayers.Feature.Vector( pt, {labelText: addressText, style: "italic", pointRadius: 0, yOffset: offsetY } );
                     labelFeatures.push(addrFeature);
                 }
@@ -421,14 +430,14 @@ function wmepn_showLandmarkNames() {
                 // Add label texts
                 var labelFeatures = [];
                 var pt = new OpenLayers.Geometry.Point(venue.geometry.x, venue.geometry.y);
-                var isHouseNumber = !filterMatched;
+                //var isHouseNumber = !filterMatched;
 
                 var textFeature = new OpenLayers.Feature.Vector( pt, {labelText: wrappedText, fontColor: '#F0F0F0', pointRadius: 0, yOffset: 15 });
                 labelFeatures.push(textFeature);
 
                 if(showAddresses)
                 {
-                    var offsetY =  wmepn_getYoffset(words, wrappedText.length);
+                    var offsetY = wmepn_getYoffset(words, wrappedText.length);
                     var addrFeature = new OpenLayers.Feature.Vector( pt, {labelText: addressText, style: "italic", pointRadius: 0, yOffset: offsetY } );
                     labelFeatures.push(addrFeature);
                 }
@@ -441,7 +450,7 @@ function wmepn_showLandmarkNames() {
                 // Add label texts
                 var labelFeatures = [];
                 var pt = new OpenLayers.Geometry.Point(venue.geometry.x, venue.geometry.y);
-                var isHouseNumber = !filterMatched;
+                //var isHouseNumber = !filterMatched;
 
                 var textFeature = new OpenLayers.Feature.Vector( pt, {labelText: wrappedText, style: "italic", fontColor: '#F0F0F0', pointRadius: 0, yOffset: 15 });
                 labelFeatures.push(textFeature);
@@ -627,7 +636,7 @@ function wmepn_showLandmarkNames() {
             {
                 // Add label texts
                 var labelFeatures = [];
-                var bounds = comment.geometry.bounds;
+                //var bounds = comment.geometry.bounds;
                 var pt = comment.geometry.getCentroid();
                 var textFeature = new OpenLayers.Feature.Vector( pt, {labelText: wrappedText, fontColor: '#F0F0F0', pointRadius: 0 });
                 labelFeatures.push(textFeature);
@@ -669,7 +678,6 @@ function wmepn_showLandmarkNames() {
   }
   wmepn_getId('_stLandmarkNumber').innerHTML = '<i>' + drawnNames + '</i> ' + I18n.t("wmepn.place_names_and", {count: drawnNames});
   wmepn_getId('_stLandmarkHNNumber').innerHTML = '<i>' + drawnHNs + '</i> ' + I18n.t("wmepn.house_numbers", {count: drawnHNs});
-  //map.getLayersBy("name", "Place Names")[0].setZIndex(730);
 }
 
 function wmepn_getYoffset (words, length) {
@@ -706,12 +714,7 @@ var modifyArea = function () {
     var wazeActionUpdateFeatureGeometry = require("Waze/Action/UpdateFeatureGeometry");
     var action = new wazeActionUpdateFeatureGeometry(SelectedLandmark.model, W.model.venues, oldGeometry, newGeometry);
     W.model.actionManager.add(action);
-
 };
-
-function wmepn_toggleOptions () {
-  return false;
-}
 
 /* helper function */
 function wmepn_getId(node) {
@@ -731,14 +734,10 @@ function initialiseLandmarkNames()
         return;
     }
 
-  // global variables
-  wmepn_betaMode = location.hostname.match(/editor-beta.waze.com/);
-  wmepn_NameLayer = undefined;
-
   // Some internationalization
   I18n.translations[I18n.locale].wmepn = wmepn_translations[I18n.locale];
   if(wmepn_translations[I18n.locale] === undefined) I18n.translations[I18n.locale].wmepn = wmepn_translations[I18n.locale]; //FIXME !!!
-  I18n.translations[I18n.locale].layers.name.__DrawPlaceNames = 'Place Names PLUS';
+  I18n.translations[I18n.locale].layers.name[wmepn_uniqueLayerName] = wmepn_scriptName;
 
   // add new box to left of the map
   var addon = document.createElement('section');
@@ -791,7 +790,7 @@ function initialiseLandmarkNames()
   addon.appendChild(section);
 
   var newtab = document.createElement('li');
-  newtab.innerHTML = '<a href="#sidepanel-landmarknames" data-toggle="tab">PlaceNames+</a>';
+  newtab.innerHTML = '<a href="#sidepanel-landmarknames" data-toggle="tab">' + wmepn_scriptName + '</a>';
   navTabs.appendChild(newtab);
 
   addon.id = "sidepanel-landmarknames";
@@ -815,13 +814,21 @@ function initialiseLandmarkNames()
     wmepn_getId('_cbShowPoi').onclick = wmepn_resetLandmarks;
     wmepn_getId('_cbShowRH').onclick = wmepn_resetLandmarks;
     wmepn_getId('_cbShowComment').onclick = wmepn_resetLandmarks;
-    wmepn_getId('_cbShowLinked').onclick = function(){ if (wmepn_getId('_cbShowLinked').checked) wmepn_getId('_cbShowNotLinked').checked = false; wmepn_resetLandmarks(); };
-    wmepn_getId('_cbShowNotLinked').onclick = function(){ if (wmepn_getId('_cbShowNotLinked').checked) wmepn_getId('_cbShowLinked').checked = false; wmepn_resetLandmarks(); };
+    wmepn_getId('_cbShowLinked').onclick = function() {
+        if (wmepn_getId('_cbShowLinked').checked)
+            wmepn_getId('_cbShowNotLinked').checked = false;
+        wmepn_resetLandmarks();
+    };
+    wmepn_getId('_cbShowNotLinked').onclick = function() {
+        if (wmepn_getId('_cbShowNotLinked').checked)
+            wmepn_getId('_cbShowLinked').checked = false;
+        wmepn_resetLandmarks();
+    };
 
     // Create PlaceName layer
-    var rlayers = map.getLayersBy("uniqueName","__DrawPlaceNames");
+    var rlayers = map.getLayersBy("uniqueName", wmepn_uniqueLayerName);
     if(rlayers.length == 0) {
-        var lname = "Place Names";
+        var lname = wmepn_scriptName;
         var style = new OpenLayers.Style({
             strokeDashstyle: 'solid',
             strokeColor : "${strokeColor}",
@@ -844,26 +851,22 @@ function initialiseLandmarkNames()
         });
         var nameLayer = new OpenLayers.Layer.Vector(lname, {
             displayInLayerSwitcher: true,
-            uniqueName: "__DrawPlaceNames",
+            uniqueName: wmepn_uniqueLayerName,
             shortcutKey: "S+n",
             accelerator: "toggle" + lname.replace(/\s+/g,''),
-            styleMap: new OpenLayers.StyleMap(style)
+            styleMap: new OpenLayers.StyleMap(style),
+            visibility: true
         });
-        nameLayer.setVisibility(true);
-        //drc_mapLayer1.moveLayerToTop();
         map.addLayer(nameLayer);
-        //var zLandmarks = map.getLayersBy("uniqueName", "landmarks")[0].getZIndex();
-        //var zPlaceNames = drc_mapLayer1.getZIndex();
-        //map.getLayersBy("uniqueName", "landmarks")[0].setZIndex(zPlaceNames);
-        //drc_mapLayer1.setZIndex(zLandmarks);
+
         wmepn_NameLayer = nameLayer;
     }
     else wmepn_NameLayer = rlayers[0];
 
   // restore saved settings
   if (localStorage.WMELandmarkNamesScript) {
-    console.log("WME LandmarkNames: loading options");
-    options = JSON.parse(localStorage.WMELandmarkNamesScript);
+    console.log("WME PlaceNames: loading options");
+    var options = JSON.parse(localStorage.WMELandmarkNamesScript);
 
     wmepn_getId('_cbLandmarkColors').checked = options[1];
     wmepn_getId('_cbLandmarkHiliteNoName').checked = options[2];
@@ -929,10 +932,17 @@ function initialiseLandmarkNames()
     wmepn_getId('_minArea').value = 650;
   }
 
-    var layerItem = '<li><div class="controls-container toggler"><input class="layer-switcher-item_placenames_plus toggle" id="layer-switcher-item_placenames_plus" type="checkbox"><label for="layer-switcher-item_placenames_plus"><span class="label-text">PlaceNames Plus</span></label></div></li>';
-    $("#layer-switcher-group_places").parent().parent().children("ul.children").append(layerItem);
-    $("#layer-switcher-item_placenames_plus").click(function() { wmepn_NameLayer.setVisibility(!wmepn_NameLayer.getVisibility()); });
-    $("#layer-switcher-item_placenames_plus").prop("checked", wmepn_NameLayer.getVisibility());
+    // add layer to menu
+    var $ul = $('.collapsible-GROUP_DISPLAY');
+    var checkbox = document.createElement("wz-checkbox");
+    checkbox.id = 'layer-switcher-item_placenames_plus';
+    checkbox.className = "hydrated";
+    checkbox.checked = wmepn_NameLayer.getVisibility();
+    checkbox.appendChild(document.createTextNode(wmepn_scriptName));
+    checkbox.onclick = function() {
+        wmepn_NameLayer.setVisibility(!wmepn_NameLayer.getVisibility());
+    };
+    $ul.append(checkbox);
 
   if (typeof W.model.venues == "undefined") {
     wmepn_getId('_cbLandmarkColors').checked = false;
@@ -958,9 +968,9 @@ function initialiseLandmarkNames()
   }
 
   // overload the WME exit function
-  wmepn_saveLandmarkNamesOptions = function() {
+  var wmepn_saveLandmarkNamesOptions = function() {
     if (localStorage) {
-      console.log("WME LandmarkNames: saving options");
+      console.log("WME PlaceNames: saving options");
       var options = [];
 
       // preserve previous options which may get lost after logout
@@ -992,9 +1002,6 @@ function initialiseLandmarkNames()
   };
   window.addEventListener("beforeunload", wmepn_saveLandmarkNamesOptions, false);
 
-  // begin periodic updates
-  //window.setInterval(wmepn_showLandmarkNames,500);
-
   // trigger code when page is fully loaded, to catch any missing bits
   window.addEventListener("load", function(e) {
     var mapProblems = wmepn_getId('map-problems-explanation');
@@ -1007,7 +1014,7 @@ function initialiseLandmarkNames()
   map.events.register("mouseout", null, wmepn_showLandmarkNames);
   W.selectionManager.events.register("selectionchanged", null, wmepn_showLandmarkNames);
 
-  I18n.translations[I18n.locale].keyboard_shortcuts.groups['default'].members.WME_PlaceNames_enable = "Включить/выключить скрипт PlaceNames Plus";
+  I18n.translations[I18n.locale].keyboard_shortcuts.groups['default'].members.WME_PlaceNames_enable = "Включить/выключить скрипт " + wmepn_scriptName;
   W.accelerators.addAction("WME_PlaceNames_enable", {group: 'default'});
   W.accelerators.events.register("WME_PlaceNames_enable", null, enablePlaceNames);
   W.accelerators._registerShortcuts({ 'S+n' : "WME_PlaceNames_enable"});
