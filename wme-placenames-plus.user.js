@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         WME PlaceNames PLUS
-// @version      0.83
+// @version      0.84
 // @description  Show area and point place names in WME, color and highlight places by type and properties (waze-ua fork)
 // @include      https://www.waze.com/editor*
 // @include      https://www.waze.com/*/editor*
@@ -362,7 +362,7 @@ function wmepn_showLandmarkNames() {
          && !wmepn_getId('_cbLandmarkHiliteNoAddress').checked
          && !wmepn_getId('_cbLandmarkHiliteDifHN').checked
          && !wmepn_getId('_cbLandmarkHiliteSmall').checked ) {
-        
+
         for (var mark in venues.objects) {
             var venue = venues.getObjectById(mark);
             var poly = wmepn_getId(venue.geometry.id);
@@ -548,8 +548,8 @@ function wmepn_showLandmarkNames() {
                 } else {
                     var square = W.model.venues.getObjectById(v_id).geometry.getGeodesicArea(W.map.getProjectionObject());
                     area_poi.style = (square < minArea) ? "color: red;" : "color: black;";
-                    area_poi.innerHTML = I18n.t("wmepn.square") + ": " + square.toFixed(2) + " " + 
-                        I18n.t("wmepn.square_m_2") + " (<a href='#' id='_modifyArea' title='" + 
+                    area_poi.innerHTML = I18n.t("wmepn.square") + ": " + square.toFixed(2) + " " +
+                        I18n.t("wmepn.square_m_2") + " (<a href='#' id='_modifyArea' title='" +
                         I18n.t("wmepn.hotkey") + " \"Y\"'>" + I18n.t("wmepn.make") + " ~" + minArea + I18n.t("wmepn.square_m_2") + "</a>)";
                     $('#_modifyArea').click(modifyArea);
                 }
@@ -804,7 +804,7 @@ function initialiseLandmarkNames() {
 
   addon.id = "landmarkname-addon";
   addon.innerHTML = '<b>'
-                  + '<a href="https://www.waze.com/forum/viewtopic.php?f=819&t=116843" target="_blank" ' 
+                  + '<a href="https://www.waze.com/forum/viewtopic.php?f=819&t=116843" target="_blank" '
                   + translator + '>' + GM_info.script.name + '</a></b> &nbsp; v' + GM_info.script.version;
   if (wmepn_translations[I18n.locale] === undefined)
       addon.innerHTML += ' <small>[<a href="https://www.waze.com/forum/viewtopic.php?f=819&t=116843&p=1302802#p1302802" target="_blank">translate me!</a>]</small>';
@@ -815,7 +815,7 @@ function initialiseLandmarkNames() {
   section.style.padding = "8px 16px";
   //section.style.textIndent = "-16px";
   section.id = "nameLandmarks";
-  section.innerHTML = 
+  section.innerHTML =
       '<div title="' + I18n.t("wmepn.enable_script_tooltip") + '"><input type="checkbox" id="_cbLandmarkNamesEnable" /> <b>' + I18n.t("wmepn.enable_script") + '</b></div>'
     + '<div title="' + I18n.t("wmepn.color_places_tooltip") + '"><input type="checkbox" id="_cbLandmarkColors" /> <b>' + I18n.t("wmepn.color_places") + '</b></div>'
     + '<div title="' + I18n.t("wmepn.highlight_places_tooltip") + '"><input type="checkbox" id="_cbLandmarkHiliteNoName"/> <b>' + I18n.t("wmepn.highlight_places") + '</b></div>'
@@ -991,15 +991,18 @@ function initialiseLandmarkNames() {
 
     // add layer to menu
     var $ul = $('.collapsible-GROUP_DISPLAY');
+    var $li = document.createElement('li');
     var checkbox = document.createElement("wz-checkbox");
     checkbox.id = 'layer-switcher-item_placenames_plus';
     checkbox.className = "hydrated";
+    checkbox.type = 'checkbox';
     checkbox.checked = wmepn_NameLayer.getVisibility();
     checkbox.appendChild(document.createTextNode(wmepn_scriptName));
     checkbox.onclick = function() {
         wmepn_NameLayer.setVisibility(!wmepn_NameLayer.getVisibility());
     };
-    $ul.append(checkbox);
+    $li.append(checkbox);
+    $ul.append($li);
 
   if (typeof W.model.venues == "undefined") {
     wmepn_getId('_cbLandmarkColors').checked = false;
@@ -1071,13 +1074,13 @@ function initialiseLandmarkNames() {
   map.events.register("mouseout", null, wmepn_showLandmarkNames);
   W.selectionManager.events.register("selectionchanged", null, wmepn_showLandmarkNames);
 
-  I18n.translations[I18n.locale].keyboard_shortcuts.groups['default'].members.WME_PlaceNames_enable = 
+  I18n.translations[I18n.locale].keyboard_shortcuts.groups['default'].members.WME_PlaceNames_enable =
     I18n.t("wmepn.enable_disable_script") + " " + wmepn_scriptName;
   W.accelerators.addAction("WME_PlaceNames_enable", {group: 'default'});
   W.accelerators.events.register("WME_PlaceNames_enable", null, enablePlaceNames);
   W.accelerators._registerShortcuts({'S+n' : "WME_PlaceNames_enable"});
 
-  I18n.translations[I18n.locale].keyboard_shortcuts.groups['default'].members.WME_PlaceNames_increase = 
+  I18n.translations[I18n.locale].keyboard_shortcuts.groups['default'].members.WME_PlaceNames_increase =
     I18n.t("wmepn.increase_square_to") + " " + wmepn_getId('_minArea').value.toString() + I18n.t("wmepn.increase_square_to_2");
   W.accelerators.addAction("WME_PlaceNames_increase", {group: 'default'});
   W.accelerators.events.register("WME_PlaceNames_increase", null, modifyArea);
