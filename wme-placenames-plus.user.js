@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         WME PlaceNames PLUS
-// @version      0.84
+// @version      0.85
 // @description  Show area and point place names in WME, color and highlight places by type and properties (waze-ua fork)
 // @include      https://www.waze.com/editor*
 // @include      https://www.waze.com/*/editor*
@@ -418,7 +418,7 @@ function wmepn_showLandmarkNames() {
     var isPoint = venue.geometry.toString().match(/^POINT/);
     var isArea = venue.geometry.toString().match(/^POLYGON/);
     var isRH = venue.attributes.residential;
-    var houseNumber = venue.attributes.houseNumber;
+    var houseNumber = venue.attributes.houseNumber ? venue.attributes.houseNumber : "";
     var trimmedName = isRH ? houseNumber : venue.attributes.name.trim();
     var noTrName = (trimmedName.length == 0);
     if (showLockLevel) trimmedName += (noTrName ? "" : "\n") + "[L" + (venue.attributes.lockRank+1) + "]";
