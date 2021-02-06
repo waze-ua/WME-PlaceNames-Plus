@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         WME PlaceNames PLUS
-// @version      0.85
+// @version      0.86
 // @description  Show area and point place names in WME, color and highlight places by type and properties (waze-ua fork)
 // @include      https://www.waze.com/editor*
 // @include      https://www.waze.com/*/editor*
@@ -316,7 +316,7 @@ function wmepn_wordWrap(str, maxWidth) {
             str = str.slice(maxWidth);
         }
 
-        if (str.length < maxWidth)
+        if (str.length <= maxWidth)
         {
             res = res + str;
             done = true;
@@ -326,20 +326,56 @@ function wmepn_wordWrap(str, maxWidth) {
     return res;
 }
 
-function wmepn_resetLandmarks() {
+function wmepn_addTextFeature(pt, wrappedText, showAddresses, yOffset, style, addressText, addrOffset) {
+    var labelFeatures = [];
+    var attrs = {
+        labelText: wrappedText,
+        fontColor: '#F0F0F0',
+        pointRadius: 0
+    };
+    if (yOffset) {
+        attrs.yOffset = yOffset;
+    }
+    if (style) {
+        attrs.style = style;
+    }
+    var textFeature = new OpenLayers.Feature.Vector(pt, attrs);
+    labelFeatures.push(textFeature);
+
+    if (showAddresses) {
+        var addrAttrs = {
+            labelText: addressText,
+            style: "italic",
+            pointRadius: 0
+        };
+        if (addrOffset) {
+            addrAttrs.yOffset = addrOffset;
+        }
+        var addrFeature = new OpenLayers.Feature.Vector(pt, addrAttrs);
+        labelFeatures.push(addrFeature);
+    }
+    wmepn_NameLayer.addFeatures(labelFeatures);
+}
+
+function wmepn_setDefaultVenuesAttributes(fill, stroke, fillOpacity, strokeOpacity, strokeDasharray) {
     var venues = W.model.venues;
     for (var mark in venues.objects) {
         var venue = venues.getObjectById(mark);
         var poly = wmepn_getId(venue.geometry.id);
         if (poly !== null) {
             if (poly.getAttribute("stroke-opacity") != 1) {
-                poly.setAttribute("fill", "#d191d6");
-                poly.setAttribute("stroke", "#d191d6");
-                poly.setAttribute("fill-opacity", 0.3);
-                poly.setAttribute("stroke-opacity", 1);
+                poly.setAttribute("fill", fill);
+                poly.setAttribute("stroke", stroke);
+                poly.setAttribute("fill-opacity", fillOpacity);
+                poly.setAttribute("stroke-opacity", strokeOpacity);
+                poly.setAttribute("stroke-dasharray", strokeDasharray);
             }
         }
     }
+}
+
+function wmepn_resetLandmarks() {
+    wmepn_setDefaultVenuesAttributes("#d191d6", "#d191d6", 0.3, 1, "none");
     wmepn_showLandmarkNames();
 }
 
@@ -356,26 +392,15 @@ function wmepn_showLandmarkNames() {
     var showNames = wmepn_NameLayer.getVisibility() && map.getLayersBy("uniqueName", "venues")[0].getVisibility();
 
     // if checkbox unticked, reset places to original style
-    if (!showNames
-         && !wmepn_getId('_cbLandmarkColors').checked
-         && !wmepn_getId('_cbLandmarkHiliteNoName').checked
-         && !wmepn_getId('_cbLandmarkHiliteNoAddress').checked
-         && !wmepn_getId('_cbLandmarkHiliteDifHN').checked
-         && !wmepn_getId('_cbLandmarkHiliteSmall').checked ) {
+    if (!showNames &&
+        !wmepn_getId('_cbLandmarkColors').checked &&
+        !wmepn_getId('_cbLandmarkHiliteNoName').checked &&
+        !wmepn_getId('_cbLandmarkHiliteNoAddress').checked &&
+        !wmepn_getId('_cbLandmarkHiliteDifHN').checked &&
+        !wmepn_getId('_cbLandmarkHiliteSmall').checked) {
 
-        for (var mark in venues.objects) {
-            var venue = venues.getObjectById(mark);
-            var poly = wmepn_getId(venue.geometry.id);
-            if (poly !== null) {
-                if (poly.getAttribute("stroke-opacity") != 1) {
-                    poly.setAttribute("fill", "#d191d6");
-                    poly.setAttribute("stroke", "#d191d6");
-                    poly.setAttribute("fill-opacity", 0.3);
-                    poly.setAttribute("stroke-opacity", 1);
-                    poly.setAttribute("stroke-dasharray", "none");
-                }
-            }
-        }
+        wmepn_setDefaultVenuesAttributes("#d191d6", "#d191d6", 0.3, 1, "none");
+
         wmepn_getId('_stLandmarkNumber').innerHTML = 0;
         wmepn_getId('_stLandmarkHNNumber').innerHTML = 0;
         return;
@@ -429,98 +454,49 @@ function wmepn_showLandmarkNames() {
       var hasStreet = venueStreet != null && venueStreet.name != null && venueStreet.name != "";
       var haveNoAddress = !hasHN || !hasStreet;
 
-        if (showNames && (showAreas || showPoints || showResidentials) && (limitNames == 0 || drawnNames < limitNames)
-            && (map.zoom >= wmepn_getId('_zoomLevel').value)) {
+        if (showNames && (showAreas || showPoints || showResidentials) && (limitNames == 0 || drawnNames < limitNames) &&
+            (map.zoom >= wmepn_getId('_zoomLevel').value)) {
 
             var wrappedText = wmepn_wordWrap(trimmedName, 30);
             var addressText = "";
+            var words = 1;
 
             if (showAddresses && ( showAreas && isArea || showPoints && isPoint || showResidentials && isRH) ) {
                 // how many words in POI name (needed to determine offsetY below)
-                var words = wrappedText.replace(/\n/g,' ') + ' ';
-                words = words.split(/\s* \s*/).length-1;
+                words = wrappedText.replace(/\n/g,' ') + ' ';
+                words = words.split(/\s* \s*/).length - 1;
                 addressText = hasStreet ? venueStreet.name.trim() : addressText;
-                addressText = hasHN ? (hasStreet ? (addressText+", "+houseNumber) : houseNumber) : addressText;
-                addressText = (addressText.length>0) ? ("("+addressText+")") : addressText;
+                addressText = hasHN ? (hasStreet ? (addressText + ", " + houseNumber) : houseNumber) : addressText;
+                addressText = (addressText.length > 0) ? ("("+addressText+")") : addressText;
             }
             var filterMatched = (!noTrName && doFilter(trimmedName))||(hasHN && isRH && doFilter(houseNumber))||(showAddresses && doFilter(addressText));
             if (showAreas && isArea && filterMatched) {
                 // Add label texts
-                var labelFeatures = [];
                 //var bounds = venue.geometry.bounds;
                 var pt;
                 //if(bounds.getWidth() * bounds.getHeight() * .3 > venue.geometry.getArea() && venue.attributes.entryExitPoints.length > 0)
                 //    pt = venue.attributes.entryExitPoints[0].point;
                 //else
                     pt = venue.geometry.getCentroid();
-                var textFeature = new OpenLayers.Feature.Vector( pt, {
-                    labelText: wrappedText,
-                    fontColor: '#F0F0F0',
-                    pointRadius: 0 });
-                labelFeatures.push(textFeature);
 
-                if (showAddresses) {
-                    var offsetY = wmepn_getYoffset(words, wrappedText.length);
-                    var addrFeature = new OpenLayers.Feature.Vector( pt, {
-                        labelText: addressText,
-                        style: "italic",
-                        pointRadius: 0,
-                        yOffset: offsetY });
-                    labelFeatures.push(addrFeature);
-                }
-                wmepn_NameLayer.addFeatures(labelFeatures);
+                var addrOffset = wmepn_getYoffset(words, wrappedText.length);
+                wmepn_addTextFeature(pt, wrappedText, showAddresses, null, null, addressText, addrOffset);
+
                 drawnNames++;
             }
+
+            var pt = new OpenLayers.Geometry.Point(venue.geometry.x, venue.geometry.y);
             if (showPoints && isPoint && !isRH && filterMatched) {
                 // Add label texts
-                var labelFeatures = [];
-                var pt = new OpenLayers.Geometry.Point(venue.geometry.x, venue.geometry.y);
-                //var isHouseNumber = !filterMatched;
+                var addrOffset = wmepn_getYoffset(words, wrappedText.length);
+                wmepn_addTextFeature(pt, wrappedText, showAddresses, 15, null, addressText, addrOffset);
 
-                var textFeature = new OpenLayers.Feature.Vector( pt, {
-                    labelText: wrappedText,
-                    fontColor: '#F0F0F0',
-                    pointRadius: 0,
-                    yOffset: 15 });
-                labelFeatures.push(textFeature);
-
-                if (showAddresses) {
-                    var offsetY = wmepn_getYoffset(words, wrappedText.length);
-                    var addrFeature = new OpenLayers.Feature.Vector( pt, {
-                        labelText: addressText,
-                        style: "italic",
-                        pointRadius: 0,
-                        yOffset: offsetY });
-                    labelFeatures.push(addrFeature);
-                }
-
-                wmepn_NameLayer.addFeatures(labelFeatures);
                 drawnNames++;
             }
             if (showResidentials && isPoint && isRH && filterMatched) {
                 // Add label texts
-                var labelFeatures = [];
-                var pt = new OpenLayers.Geometry.Point(venue.geometry.x, venue.geometry.y);
-                //var isHouseNumber = !filterMatched;
+                wmepn_addTextFeature(pt, wrappedText, showAddresses, 15, "italic", addressText, -15);
 
-                var textFeature = new OpenLayers.Feature.Vector( pt, {
-                    labelText: wrappedText,
-                    style: "italic",
-                    fontColor: '#F0F0F0',
-                    pointRadius: 0,
-                    yOffset: 15 });
-                labelFeatures.push(textFeature);
-
-                if (showAddresses) {
-                    var addrFeature = new OpenLayers.Feature.Vector( pt, {
-                        labelText: addressText,
-                        style: "italic",
-                        pointRadius: 0,
-                        yOffset: -15 } );
-                    labelFeatures.push(addrFeature);
-                }
-
-                wmepn_NameLayer.addFeatures(labelFeatures);
                 drawnHNs++;
             }
         }
@@ -596,18 +572,19 @@ function wmepn_showLandmarkNames() {
             poly.setAttribute("stroke-dasharray", "none");
 
             var isNature = 0;
-            isNature = ((venue.attributes.categories[0] === "PARKING_LOT")
-                || (venue.attributes.categories[0] === "RIVER_STREAM")
-                || (venue.attributes.categories[0] === "SEA_LAKE_POOL")
-                || (venue.attributes.categories[0] === "PARK")
-                || (venue.attributes.categories[0] === "FARM")
-                || (venue.attributes.categories[0] === "FOREST_GROVE")
-                || (venue.attributes.categories[0] === "GOLF_COURSE")
+            isNature = (
+                (venue.attributes.categories[0] === "PARKING_LOT") ||
+                (venue.attributes.categories[0] === "RIVER_STREAM") ||
+                (venue.attributes.categories[0] === "SEA_LAKE_POOL") ||
+                (venue.attributes.categories[0] === "PARK") ||
+                (venue.attributes.categories[0] === "FARM") ||
+                (venue.attributes.categories[0] === "FOREST_GROVE") ||
+                (venue.attributes.categories[0] === "GOLF_COURSE")
             );
 
             // highlight places with place surface area less than _minArea
-            if (hiliteSmall && isArea && (W.map.zoom >= 3)
-                && (venue.geometry.getGeodesicArea(W.map.getProjectionObject()) < minArea)) {
+            if (hiliteSmall && isArea && (W.map.zoom >= 3) &&
+                (venue.geometry.getGeodesicArea(W.map.getProjectionObject()) < minArea)) {
                 poly.setAttribute("fill", "#f00");
                 poly.setAttribute("stroke", "#f00");
             }
@@ -634,16 +611,16 @@ function wmepn_showLandmarkNames() {
                 colored = true;
             }
             // highlight places which have no address
-            else if (hiliteNoAddress && !isNature && haveNoAddress
-                && (W.map.zoom >= wmepn_getId('_zoomLevel').value)) {
+            else if (hiliteNoAddress && !isNature && haveNoAddress &&
+                (W.map.zoom >= wmepn_getId('_zoomLevel').value)) {
                 poly.setAttribute("stroke", "#0f0");
                 poly.setAttribute("stroke-dasharray", "4 7");
                 colored = true;
             }
             // highlight places which have different name and HN
             else if (hiliteDifHN && (colored == false) && (map.zoom >= wmepn_getId('_zoomLevel').value) && hasHN && !haveNoName &&
-                ((venue.attributes.categories[0] === "OTHER") || (venue.attributes.categories[0] === "PROFESSIONAL_AND_PUBLIC"))
-                && (!(houseNumber == venue.attributes.name.trim() || houseNumber == venue.attributes.name.trim().split(',')[0]))) {
+                ((venue.attributes.categories[0] === "OTHER") || (venue.attributes.categories[0] === "PROFESSIONAL_AND_PUBLIC")) &&
+                (!(houseNumber == venue.attributes.name.trim() || houseNumber == venue.attributes.name.trim().split(',')[0]))) {
                 poly.setAttribute("stroke", "#f00");
                 poly.setAttribute("stroke-dasharray", "4 7");
                 colored = true;
@@ -667,69 +644,44 @@ function wmepn_showLandmarkNames() {
     if (poly !== null) {
       var haveNoName = noTrName;
 
-        if (showComments && (limitNames == 0 || drawnNames < limitNames)
-            && (map.zoom >= wmepn_getId('_zoomLevel').value)) {
+        if (showComments && (limitNames == 0 || drawnNames < limitNames) &&
+            (map.zoom >= wmepn_getId('_zoomLevel').value)) {
             var wrappedText = wmepn_wordWrap(trimmedName, 30);
             var commentBody = "";
+            var words = 1;
+            var commentsWords = 1;
 
             if (showAddresses && (showComments && isComment)) {
                 // how many words in Comment subject (needed to determine offsetY below)
-                var words = wrappedText.replace(/\n/g,' ') + ' ';
+                words = wrappedText.replace(/\n/g,' ') + ' ';
                 words = words.split(/\s* \s*/).length - 1;
                 commentBody = comment.attributes.body === "" || comment.attributes.body === "undefined" ? commentBody : wmepn_wordWrap(comment.attributes.body, 30);
-                var commentsWords = commentBody.replace(/\n/g,' ') + ' ';
+                commentsWords = commentBody.replace(/\n/g,' ') + ' ';
                 commentsWords = commentsWords.split(/\s* \s*/).length - 1;
             }
             var filterMatched = (!noTrName && doFilter(trimmedName))||(showAddresses && doFilter(commentBody));
             if (showComments && ((showAreas && isArea) || (!showAreas && !showPoints)) && filterMatched) {
                 // Add label texts
-                var labelFeatures = [];
                 //var bounds = comment.geometry.bounds;
                 var pt = comment.geometry.getCentroid();
-                var textFeature = new OpenLayers.Feature.Vector( pt, {
-                    labelText: wrappedText,
-                    fontColor: '#F0F0F0',
-                    pointRadius: 0 });
-                labelFeatures.push(textFeature);
 
-                if (showAddresses) {
-                    var offsetY = wmepn_getYoffset(words, wrappedText.length);
-                    offsetY += wmepn_getYoffset(commentsWords, commentBody.length);
-                    var addrFeature = new OpenLayers.Feature.Vector( pt, {
-                        labelText: commentBody,
-                        style: "italic",
-                        pointRadius: 0,
-                        yOffset: offsetY });
-                    labelFeatures.push(addrFeature);
-                }
-                wmepn_NameLayer.addFeatures(labelFeatures);
+                var offsetY = wmepn_getYoffset(words, wrappedText.length);
+                offsetY += wmepn_getYoffset(commentsWords, commentBody.length);
+
+                wmepn_addTextFeature(pt, wrappedText, showAddresses, null, null, commentBody, offsetY);
+
                 drawnNames++;
             }
 
             if (showComments && ((showPoints && isPoint) || (!showAreas && !showPoints)) && filterMatched) {
                 // Add label texts
-                var labelFeatures = [];
                 var pt = new OpenLayers.Geometry.Point(comment.geometry.x, comment.geometry.y);
 
-                var textFeature = new OpenLayers.Feature.Vector( pt, {
-                    labelText: wrappedText,
-                    fontColor: '#F0F0F0',
-                    pointRadius: 0,
-                    yOffset: 15 });
-                labelFeatures.push(textFeature);
+                var offsetY = wmepn_getYoffset(words, wrappedText.length);
+                offsetY += wmepn_getYoffset(commentsWords, commentBody.length);
 
-                if (showAddresses) {
-                    var offsetY =  wmepn_getYoffset(words, wrappedText.length);
-                    offsetY += wmepn_getYoffset(commentsWords, commentBody.length);
-                    var addrFeature = new OpenLayers.Feature.Vector( pt, {
-                        labelText: commentBody,
-                        style: "italic",
-                        pointRadius: 0,
-                        yOffset: offsetY });
-                    labelFeatures.push(addrFeature);
-                }
+                wmepn_addTextFeature(pt, wrappedText, showAddresses, 15, null, commentBody, offsetY);
 
-                wmepn_NameLayer.addFeatures(labelFeatures);
                 drawnNames++;
             }
         }
@@ -740,7 +692,7 @@ function wmepn_showLandmarkNames() {
   wmepn_getId('_stLandmarkHNNumber').innerHTML = '<i>' + drawnHNs + '</i> ' + I18n.t("wmepn.house_numbers", {count: drawnHNs});
 }
 
-function wmepn_getYoffset (words, length) {
+function wmepn_getYoffset(words, length) {
 
     return (words == 1) ? (-12) : (((words > 1) &&
             (length < 60 )) ? (-15) :
@@ -755,9 +707,9 @@ function wmepn_getYoffset (words, length) {
 
 var modifyArea = function () {
     var selectorManager = W.selectionManager;
-    if (!selectorManager.hasSelectedFeatures()
-        || selectorManager.getSelectedFeatures()[0].model.type !== "venue"
-        || !selectorManager.getSelectedFeatures()[0].model.isGeometryEditable()) {
+    if (!selectorManager.hasSelectedFeatures() ||
+        selectorManager.getSelectedFeatures()[0].model.type !== "venue" ||
+        !selectorManager.getSelectedFeatures()[0].model.isGeometryEditable()) {
         return;
     }
 
@@ -803,9 +755,9 @@ function initialiseLandmarkNames() {
   var translator = I18n.defaultLocale == I18n.locale ? "" : 'title="' + I18n.t("wmepn.translator") + '"';
 
   addon.id = "landmarkname-addon";
-  addon.innerHTML = '<b>'
-                  + '<a href="https://www.waze.com/forum/viewtopic.php?f=819&t=116843" target="_blank" '
-                  + translator + '>' + GM_info.script.name + '</a></b> &nbsp; v' + GM_info.script.version;
+  addon.innerHTML = '<b>' +
+                    '<a href="https://www.waze.com/forum/viewtopic.php?f=819&t=116843" target="_blank" ' +
+                    translator + '>' + GM_info.script.name + '</a></b> &nbsp; v' + GM_info.script.version;
   if (wmepn_translations[I18n.locale] === undefined)
       addon.innerHTML += ' <small>[<a href="https://www.waze.com/forum/viewtopic.php?f=819&t=116843&p=1302802#p1302802" target="_blank">translate me!</a>]</small>';
 
@@ -816,34 +768,34 @@ function initialiseLandmarkNames() {
   //section.style.textIndent = "-16px";
   section.id = "nameLandmarks";
   section.innerHTML =
-      '<div title="' + I18n.t("wmepn.enable_script_tooltip") + '"><input type="checkbox" id="_cbLandmarkNamesEnable" /> <b>' + I18n.t("wmepn.enable_script") + '</b></div>'
-    + '<div title="' + I18n.t("wmepn.color_places_tooltip") + '"><input type="checkbox" id="_cbLandmarkColors" /> <b>' + I18n.t("wmepn.color_places") + '</b></div>'
-    + '<div title="' + I18n.t("wmepn.highlight_places_tooltip") + '"><input type="checkbox" id="_cbLandmarkHiliteNoName"/> <b>' + I18n.t("wmepn.highlight_places") + '</b></div>'
-    + '<div title="' + I18n.t("wmepn.highlight_address_tooltip") + '"><input type="checkbox" id="_cbLandmarkHiliteNoAddress"/> <b>' + I18n.t("wmepn.highlight_address") + '</b></div>'
-    + '<div title="' + I18n.t("wmepn.highlight_dif_address_tooltip") + '"><input type="checkbox" id="_cbLandmarkHiliteDifHN"/> <b>' + I18n.t("wmepn.highlight_dif_address") + '</b></div>'
-    + '<div title="' + I18n.t("wmepn.highlight_linked_tooltip") + '"><input type="checkbox" id="_cbShowLinked" /> <b>' + I18n.t("wmepn.highlight_linked") + '</b></div>'
-    + '<div title="' + I18n.t("wmepn.highlight_not_linked_tooltip") + '"><input type="checkbox" id="_cbShowNotLinked" /> <b>' + I18n.t("wmepn.highlight_not_linked") + '</b></div>'
-    + '<div title="' + I18n.t("wmepn.highlight_small_tooltip") + '"><input type="checkbox" id="_cbLandmarkHiliteSmall"/> <b>' + I18n.t("wmepn.highlight_small")
-        + '</b><input id="_minArea" style="width: 40px;"/><b>' + I18n.t("wmepn.square_m_2") + '</b></div>'
-    + '<div title="' + I18n.t("wmepn.show_address_tooltip") + '"><input type="checkbox" id="_cbLandmarkShowAddresses"/> <b>' + I18n.t("wmepn.show_address") + '</b></div>'
-    + '<div title="' + I18n.t("wmepn.show_tooltip")+'"><b>' + I18n.t("wmepn.show") + ':</b></div>'
-    + '<div title="' + I18n.t("wmepn.show") + ' ' + I18n.t("wmepn.option_area") + '" style="padding-left: 20px;"><input type="checkbox" id="_cbShowArea"> ' + I18n.t("wmepn.option_area") + '</div>'
-    + '<div title="' + I18n.t("wmepn.show") + ' ' + I18n.t("wmepn.option_point") + '" style="padding-left: 20px;"><input type="checkbox" id="_cbShowPoi"> ' + I18n.t("wmepn.option_point") + '</div>'
-    + '<div title="' + I18n.t("wmepn.show") + ' ' + I18n.t("wmepn.option_residential") + '" style="padding-left: 20px;"><input type="checkbox" id="_cbShowRH"> ' + I18n.t("wmepn.option_residential") + '</div>'
-        + '<div title="' + I18n.t("wmepn.show") + ' ' + I18n.t("wmepn.option_comments") + '" style="padding-left: 20px;"><input type="checkbox" id="_cbShowComment"> ' + I18n.t("wmepn.option_comments") + '</div>'
-        + '<div title="' + I18n.t("wmepn.filter_tooltip") + '"><b>' + I18n.t("wmepn.filter") + ':</b><input type="text" id="_inLandmarkNameFilter"/></div>'
-        + '<div title="' + I18n.t("wmepn.show_locklevel_tooltip") + '"><input type="checkbox" id="_cbLandmarkLockLevel" /> <b>' + I18n.t("wmepn.show_locklevel") + '</b></div>'
-        + '<div title="' + I18n.t("wmepn.stop_over_tooltip") + '"><b>' + I18n.t("wmepn.stop_over") + '</b> <select id="_seLandmarkLimit">'
-            + '<option value="0">' + I18n.t("wmepn.option_unlimited") + '</option>'
-            + '<option value="500">500</option>'
-            + '<option value="200">200</option>'
-            + '<option value="100">100</option>'
-            + '<option value="50">50</option>'
-            + '<option value="25">25</option>'
-            + '<option value="10">10</option>'
-        +'</select></div>'
-        + '<div><small>' + I18n.t("wmepn.showing") + ' <span id="_stLandmarkNumber"></span> <span id="_stLandmarkHNNumber"></span></small></div>'
-        + '<div title="' + I18n.t("wmepn.show_zoom_tooltip") + '"><b>' + I18n.t("wmepn.show_zoom") + '</b><input type="number" id="_zoomLevel"/></div>';
+      '<div title="' + I18n.t("wmepn.enable_script_tooltip") + '"><input type="checkbox" id="_cbLandmarkNamesEnable" /> <b>' + I18n.t("wmepn.enable_script") + '</b></div>' +
+      '<div title="' + I18n.t("wmepn.color_places_tooltip") + '"><input type="checkbox" id="_cbLandmarkColors" /> <b>' + I18n.t("wmepn.color_places") + '</b></div>' +
+      '<div title="' + I18n.t("wmepn.highlight_places_tooltip") + '"><input type="checkbox" id="_cbLandmarkHiliteNoName"/> <b>' + I18n.t("wmepn.highlight_places") + '</b></div>' +
+      '<div title="' + I18n.t("wmepn.highlight_address_tooltip") + '"><input type="checkbox" id="_cbLandmarkHiliteNoAddress"/> <b>' + I18n.t("wmepn.highlight_address") + '</b></div>' +
+      '<div title="' + I18n.t("wmepn.highlight_dif_address_tooltip") + '"><input type="checkbox" id="_cbLandmarkHiliteDifHN"/> <b>' + I18n.t("wmepn.highlight_dif_address") + '</b></div>' +
+      '<div title="' + I18n.t("wmepn.highlight_linked_tooltip") + '"><input type="checkbox" id="_cbShowLinked" /> <b>' + I18n.t("wmepn.highlight_linked") + '</b></div>' +
+      '<div title="' + I18n.t("wmepn.highlight_not_linked_tooltip") + '"><input type="checkbox" id="_cbShowNotLinked" /> <b>' + I18n.t("wmepn.highlight_not_linked") + '</b></div>' +
+      '<div title="' + I18n.t("wmepn.highlight_small_tooltip") + '"><input type="checkbox" id="_cbLandmarkHiliteSmall"/> <b>' + I18n.t("wmepn.highlight_small") +
+          '</b><input id="_minArea" style="width: 40px;"/><b>' + I18n.t("wmepn.square_m_2") + '</b></div>' +
+      '<div title="' + I18n.t("wmepn.show_address_tooltip") + '"><input type="checkbox" id="_cbLandmarkShowAddresses"/> <b>' + I18n.t("wmepn.show_address") + '</b></div>' +
+      '<div title="' + I18n.t("wmepn.show_tooltip")+'"><b>' + I18n.t("wmepn.show") + ':</b></div>' +
+      '<div title="' + I18n.t("wmepn.show") + ' ' + I18n.t("wmepn.option_area") + '" style="padding-left: 20px;"><input type="checkbox" id="_cbShowArea"> ' + I18n.t("wmepn.option_area") + '</div>' +
+      '<div title="' + I18n.t("wmepn.show") + ' ' + I18n.t("wmepn.option_point") + '" style="padding-left: 20px;"><input type="checkbox" id="_cbShowPoi"> ' + I18n.t("wmepn.option_point") + '</div>' +
+      '<div title="' + I18n.t("wmepn.show") + ' ' + I18n.t("wmepn.option_residential") + '" style="padding-left: 20px;"><input type="checkbox" id="_cbShowRH"> ' + I18n.t("wmepn.option_residential") + '</div>' +
+          '<div title="' + I18n.t("wmepn.show") + ' ' + I18n.t("wmepn.option_comments") + '" style="padding-left: 20px;"><input type="checkbox" id="_cbShowComment"> ' + I18n.t("wmepn.option_comments") + '</div>' +
+          '<div title="' + I18n.t("wmepn.filter_tooltip") + '"><b>' + I18n.t("wmepn.filter") + ':</b><input type="text" id="_inLandmarkNameFilter"/></div>' +
+          '<div title="' + I18n.t("wmepn.show_locklevel_tooltip") + '"><input type="checkbox" id="_cbLandmarkLockLevel" /> <b>' + I18n.t("wmepn.show_locklevel") + '</b></div>' +
+          '<div title="' + I18n.t("wmepn.stop_over_tooltip") + '"><b>' + I18n.t("wmepn.stop_over") + '</b> <select id="_seLandmarkLimit">' +
+              '<option value="0">' + I18n.t("wmepn.option_unlimited") + '</option>' +
+              '<option value="500">500</option>' +
+              '<option value="200">200</option>' +
+              '<option value="100">100</option>' +
+              '<option value="50">50</option>' +
+              '<option value="25">25</option>' +
+              '<option value="10">10</option>' +
+         '</select></div>' +
+          '<div><small>' + I18n.t("wmepn.showing") + ' <span id="_stLandmarkNumber"></span> <span id="_stLandmarkHNNumber"></span></small></div>' +
+          '<div title="' + I18n.t("wmepn.show_zoom_tooltip") + '"><b>' + I18n.t("wmepn.show_zoom") + '</b><input type="number" id="_zoomLevel"/></div>';
   addon.appendChild(section);
 
   var newtab = document.createElement('li');
