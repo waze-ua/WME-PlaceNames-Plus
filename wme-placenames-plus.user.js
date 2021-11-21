@@ -898,7 +898,7 @@ function initialiseLandmarkNames () {
     if (options[9] !== undefined)
       wmepn_getId('_zoomLevel').value = options[9]
     else
-      wmepn_getId('_zoomLevel').value = 4
+      wmepn_getId('_zoomLevel').value = 17
     if (options[10] !== undefined)
       wmepn_getId('_cbLandmarkHiliteSmall').checked = options[10]
     if (options[11] !== undefined)
