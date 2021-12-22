@@ -939,7 +939,7 @@ function initialiseLandmarkNames () {
     wmepn_getId('_cbShowLinked').checked = false
     wmepn_getId('_cbShowNotLinked').checked = false
     wmepn_getId('_seLandmarkLimit').value = 100
-    wmepn_getId('_zoomLevel').value = 4
+    wmepn_getId('_zoomLevel').value = 17
     wmepn_getId('_minArea').value = 650
   }
 
