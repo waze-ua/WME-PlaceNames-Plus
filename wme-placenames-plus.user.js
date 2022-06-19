@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         WME PlaceNames PLUS
-// @version      0.87
+// @version      0.88
 // @description  Show area and point place names in WME, color and highlight places by type and properties (waze-ua fork)
 // @include      https://www.waze.com/editor*
 // @include      https://www.waze.com/*/editor*
@@ -12,6 +12,9 @@
 // @downloadURL  https://raw.githubusercontent.com/waze-ua/WME-PlaceNames-Plus/master/wme-placenames-plus.user.js
 // @grant        none
 // ==/UserScript==
+
+/* jshint -W033 */
+/* jshint esversion: 11 */
 
 /* global W */
 /* global $ */
@@ -443,28 +446,28 @@ function wmepn_showLandmarkNames () {
   var drawnHNs = 0
 
   for (let mark in venues.objects) {
-    var venue = venues.getObjectById(mark)
-    var poly = wmepn_getId(venue.geometry.id)
-    var isPoint = venue.geometry.toString().match(/^POINT/)
-    var isArea = venue.geometry.toString().match(/^POLYGON/)
-    var isRH = venue.attributes.residential
-    var houseNumber = venue.attributes.houseNumber ? venue.attributes.houseNumber : ''
-    var trimmedName = isRH ? houseNumber : venue.attributes.name.trim()
-    var noTrName = (trimmedName.length === 0)
+    let venue = venues.getObjectById(mark)
+    let poly = wmepn_getId(venue.geometry.id)
+    let isPoint = venue.geometry.toString().match(/^POINT/)
+    let isArea = venue.geometry.toString().match(/^POLYGON/)
+    let isRH = venue.attributes.residential
+    let houseNumber = venue.attributes.houseNumber ? venue.attributes.houseNumber : ''
+    let trimmedName = isRH ? houseNumber : venue.attributes.name.trim()
+    let noTrName = (trimmedName.length === 0)
     if (showLockLevel) trimmedName += (noTrName ? '' : '\n') + '[L' + (venue.attributes.lockRank + 1) + ']'
     if (poly !== null) {
-      var venueStreet = streets.getObjectById(venue.attributes.streetID)
-      var haveNoName = (isRH ? (houseNumber.length === 0) : noTrName)
-      var hasHN = houseNumber !== '' && houseNumber != null
-      var hasStreet = venueStreet != null && venueStreet.name != null && venueStreet.name !== ''
-      var haveNoAddress = !hasHN || !hasStreet
+      let venueStreet = streets.getObjectById(venue.attributes.streetID)
+      let haveNoName = (isRH ? (houseNumber.length === 0) : noTrName)
+      let hasHN = houseNumber !== '' && houseNumber != null
+      let hasStreet = venueStreet != null && venueStreet.name != null && venueStreet.name !== ''
+      let haveNoAddress = !hasHN || !hasStreet
 
       if (showNames && (showAreas || showPoints || showResidentials) && (limitNames == 0 || drawnNames < limitNames) &&
         (map.zoom >= wmepn_getId('_zoomLevel').value)) {
 
-        var wrappedText = wmepn_wordWrap(trimmedName, 30)
-        var addressText = ''
-        var words = 1
+        let wrappedText = wmepn_wordWrap(trimmedName, 30)
+        let addressText = ''
+        let words = 1
 
         if (showAddresses && (showAreas && isArea || showPoints && isPoint || showResidentials && isRH)) {
           // how many words in POI name (needed to determine offsetY below)
@@ -474,9 +477,9 @@ function wmepn_showLandmarkNames () {
           addressText = hasHN ? (hasStreet ? (addressText + ', ' + houseNumber) : houseNumber) : addressText
           addressText = (addressText.length > 0) ? ('(' + addressText + ')') : addressText
         }
-        var filterMatched = (!noTrName && doFilter(trimmedName)) || (hasHN && isRH && doFilter(houseNumber)) || (showAddresses && doFilter(addressText))
-        var pt
-        var addrOffset
+        let filterMatched = (!noTrName && doFilter(trimmedName)) || (hasHN && isRH && doFilter(houseNumber)) || (showAddresses && doFilter(addressText))
+        let pt
+        let addrOffset
         if (showAreas && isArea && filterMatched) {
           // Add label texts
           //var bounds = venue.geometry.bounds;
@@ -511,11 +514,11 @@ function wmepn_showLandmarkNames () {
       wmepn_getId('_stLandmarkHNNumber').innerHTML = drawnHNs
 
       if (W.selectionManager.getSelectedFeatures().length > 0 && W.selectionManager.getSelectedFeatures()[0].model.type === 'venue') {
-        var area_poi = document.getElementById('WME.PlaceNames-Square')
+        let area_poi = document.getElementById('WME.PlaceNames-Square')
         if (!area_poi) {
-          var wcp = document.getElementsByClassName('additional-attributes list-unstyled side-panel-section')
-          if (wcp) {
-            var li = document.createElement('LI')
+          let wcp = document.getElementsByClassName('additional-attributes list-unstyled')
+          if (wcp && wcp.length > 0) {
+            let li = document.createElement('LI')
             li.setAttribute('id', 'WME.PlaceNames-Square')
             wcp[0].appendChild(li)
             area_poi = document.getElementById('WME.PlaceNames-Square')
@@ -523,12 +526,12 @@ function wmepn_showLandmarkNames () {
         }
 
         if (area_poi) {
-          var v_id = W.selectionManager.getSelectedFeatures()[0].model.attributes.id
-          var getv = W.model.venues.getObjectById(v_id)
+          let v_id = W.selectionManager.getSelectedFeatures()[0].model.attributes.id
+          let getv = W.model.venues.getObjectById(v_id)
           if (typeof getv === 'undefined' || typeof getv.geometry.getGeodesicArea === 'undefined') {
             area_poi.innerHTML = ''
           } else {
-            var square = W.model.venues.getObjectById(v_id).geometry.getGeodesicArea(W.map.getProjectionObject())
+            let square = W.model.venues.getObjectById(v_id).geometry.getGeodesicArea(W.map.getProjectionObject())
             area_poi.style = (square < minArea) ? 'color: red;' : 'color: black;'
             area_poi.innerHTML = I18n.t('wmepn.square') + ': ' + square.toFixed(2) + ' ' +
               I18n.t('wmepn.square_m_2') + ' (<a href=\'#\' id=\'_modifyArea\' title=\'' +
@@ -636,21 +639,21 @@ function wmepn_showLandmarkNames () {
   }
   if (map.getLayerByUniqueName('mapComments')?.getVisibility()) {
     for (let mark in W.model.mapComments.objects) {
-      var comment = W.model.mapComments.getObjectById(mark)
-      var poly = wmepn_getId(comment.geometry.id)
-      var isPoint = comment.geometry.toString().match(/^POINT/)
-      var isArea = comment.geometry.toString().match(/^POLYGON/)
-      var isComment = comment.type === 'mapComment'
-      var trimmedName = comment.attributes.subject
-      var noTrName = (trimmedName.length === 0)
+      let comment = W.model.mapComments.getObjectById(mark)
+      let poly = wmepn_getId(comment.geometry.id)
+      let isPoint = comment.geometry.toString().match(/^POINT/)
+      let isArea = comment.geometry.toString().match(/^POLYGON/)
+      let isComment = comment.type === 'mapComment'
+      let trimmedName = comment.attributes.subject
+      let noTrName = (trimmedName.length === 0)
       if (showLockLevel) trimmedName += (noTrName ? '' : '\n') + '[L' + (comment.attributes.lockRank + 1) + ']'
       if (poly !== null) {
         if (showComments && (limitNames == 0 || drawnNames < limitNames) &&
           (map.zoom >= wmepn_getId('_zoomLevel').value)) {
-          var wrappedText = wmepn_wordWrap(trimmedName, 30)
-          var commentBody = ''
-          var words = 1
-          var commentsWords = 1
+          let wrappedText = wmepn_wordWrap(trimmedName, 30)
+          let commentBody = ''
+          let words = 1
+          let commentsWords = 1
 
           if (showAddresses && (showComments && isComment)) {
             // how many words in Comment subject (needed to determine offsetY below)
@@ -660,13 +663,13 @@ function wmepn_showLandmarkNames () {
             commentsWords = commentBody.replace(/\n/g, ' ') + ' '
             commentsWords = commentsWords.split(/\s* \s*/).length - 1
           }
-          var filterMatched = (!noTrName && doFilter(trimmedName)) || (showAddresses && doFilter(commentBody))
+          let filterMatched = (!noTrName && doFilter(trimmedName)) || (showAddresses && doFilter(commentBody))
           if (showComments && ((showAreas && isArea) || (!showAreas && !showPoints)) && filterMatched) {
             // Add label texts
-            //var bounds = comment.geometry.bounds;
-            var pt = comment.geometry.getCentroid()
+            //let bounds = comment.geometry.bounds;
+            let pt = comment.geometry.getCentroid()
 
-            var offsetY = wmepn_getYoffset(words, wrappedText.length)
+            let offsetY = wmepn_getYoffset(words, wrappedText.length)
             offsetY += wmepn_getYoffset(commentsWords, commentBody.length)
 
             wmepn_addTextFeature(pt, wrappedText, showAddresses, null, null, commentBody, offsetY)
@@ -676,9 +679,9 @@ function wmepn_showLandmarkNames () {
 
           if (showComments && ((showPoints && isPoint) || (!showAreas && !showPoints)) && filterMatched) {
             // Add label texts
-            var pt = new OpenLayers.Geometry.Point(comment.geometry.x, comment.geometry.y)
+            let pt = new OpenLayers.Geometry.Point(comment.geometry.x, comment.geometry.y)
 
-            var offsetY = wmepn_getYoffset(words, wrappedText.length)
+            let offsetY = wmepn_getYoffset(words, wrappedText.length)
             offsetY += wmepn_getYoffset(commentsWords, commentBody.length)
 
             wmepn_addTextFeature(pt, wrappedText, showAddresses, 15, null, commentBody, offsetY)
