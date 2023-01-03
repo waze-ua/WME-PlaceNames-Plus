@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         WME PlaceNames PLUS
-// @version      0.88
+// @version      0.89
 // @description  Show area and point place names in WME, color and highlight places by type and properties (waze-ua fork)
 // @include      https://www.waze.com/editor*
 // @include      https://www.waze.com/*/editor*
