@@ -7,9 +7,9 @@
 // @include      https://beta.waze.com/editor*
 // @include      https://beta.waze.com/*/editor*
 // @copyright    Vinkoy, ragacs, waze-ua
-// @namespace    waze-ua
-// @updateURL    https://raw.githubusercontent.com/waze-ua/WME-PlaceNames-Plus/master/wme-placenames-plus.user.js
-// @downloadURL  https://raw.githubusercontent.com/waze-ua/WME-PlaceNames-Plus/master/wme-placenames-plus.user.js
+// @namespace    https://greasyfork.org/ru/users/160654-waze-ukraine
+// @updateURL    https://greasyfork.org/ru/scripts/457557-wme-placenames-plus
+// @downloadURL  https://greasyfork.org/ru/scripts/457557-wme-placenames-plus
 // @grant        none
 // ==/UserScript==
 
