@@ -1,15 +1,14 @@
 // ==UserScript==
 // @name         WME PlaceNames PLUS
-// @version      0.89
+// @version      0.90
 // @description  Show area and point place names in WME, color and highlight places by type and properties (waze-ua fork)
-// @include      https://www.waze.com/editor*
-// @include      https://www.waze.com/*/editor*
-// @include      https://beta.waze.com/editor*
-// @include      https://beta.waze.com/*/editor*
+// @match        https://beta.waze.com/*editor*
+// @match        https://www.waze.com/*editor*
+// @exclude      https://www.waze.com/*user/*editor/*
 // @copyright    Vinkoy, ragacs, waze-ua
-// @namespace    https://greasyfork.org/ru/users/160654-waze-ukraine
-// @updateURL    https://greasyfork.org/ru/scripts/457557-wme-placenames-plus
-// @downloadURL  https://greasyfork.org/ru/scripts/457557-wme-placenames-plus
+// @namespace    https://greasyfork.org/uk/users/160654-waze-ukraine
+// @updateURL    https://greasyfork.org/uk/scripts/457557-wme-placenames-plus
+// @downloadURL  https://greasyfork.org/uk/scripts/457557-wme-placenames-plus
 // @grant        none
 // ==/UserScript==
 
@@ -23,7 +22,6 @@
 /* global I18n */
 
 // global variables
-//var wmepn_betaMode = location.hostname.match(/editor-beta.waze.com/);
 var wmepn_NameLayer
 var wmepn_uniqueLayerName = '__PlaceNamesPlusLayer'
 var wmepn_scriptName = 'Place Names +'
@@ -283,22 +281,19 @@ var wmepn_translations = {
 // Using parts from highlight and route speed scripts by various authors
 
 /* bootstrap, will call initialiseLandmarkNames() */
-function bootstrapLandmarkNames () {
-  /* begin running the code! */
-  if (typeof W === 'undefined' ||
-    typeof W.map === 'undefined' ||
-    typeof W.selectionManager === 'undefined' ||
-    typeof W.model.countries === 'undefined' ||
-    typeof I18n === 'undefined' ||
-    typeof I18n.translations === 'undefined') {
-    setTimeout(bootstrapLandmarkNames, 700)
-    return
-  }
-  initialiseLandmarkNames()
+function bootstrapLandmarkNames() {
+    /* begin running the code! */
+    if (W?.userscripts?.state.isReady) {
+        initialiseLandmarkNames();
+    } else {
+        document.addEventListener("wme-ready", initialiseLandmarkNames, {
+            once: true
+        });
+    }
 }
 
-function wmepn_wordWrap (str, maxWidth) {
-  function testWhite (x) {
+function wmepn_wordWrap(str, maxWidth) {
+  function testWhite(x) {
     var white = new RegExp(/^[ \t\r\n\f]$/) // We are not using \s because it matches non-breaking space too
     return white.test(x.charAt(0))
   }
@@ -332,7 +327,7 @@ function wmepn_wordWrap (str, maxWidth) {
   return res
 }
 
-function wmepn_addTextFeature (pt, wrappedText, showAddresses, yOffset, style, addressText, addrOffset) {
+function wmepn_addTextFeature(pt, wrappedText, showAddresses, yOffset, style, addressText, addrOffset) {
   var labelFeatures = []
   var attrs = {
     labelText: wrappedText,
@@ -363,7 +358,7 @@ function wmepn_addTextFeature (pt, wrappedText, showAddresses, yOffset, style, a
   wmepn_NameLayer.addFeatures(labelFeatures)
 }
 
-function wmepn_setDefaultVenuesAttributes (fill, stroke, fillOpacity, strokeOpacity, strokeDasharray) {
+function wmepn_setDefaultVenuesAttributes(fill, stroke, fillOpacity, strokeOpacity, strokeDasharray) {
   var venues = W.model.venues
   for (let mark in venues.objects) {
     var venue = venues.getObjectById(mark)
@@ -380,12 +375,12 @@ function wmepn_setDefaultVenuesAttributes (fill, stroke, fillOpacity, strokeOpac
   }
 }
 
-function wmepn_resetLandmarks () {
+function wmepn_resetLandmarks() {
   wmepn_setDefaultVenuesAttributes('#d191d6', '#d191d6', 0.3, 1, 'none')
   wmepn_showLandmarkNames()
 }
 
-function wmepn_showLandmarkNames () {
+function wmepn_showLandmarkNames() {
   wmepn_NameLayer.removeAllFeatures()
   if (typeof W.model.venues == 'undefined' || wmepn_getId('_cbLandmarkNamesEnable').checked === false) {
     wmepn_getId('_stLandmarkNumber').innerHTML = 0
@@ -394,8 +389,7 @@ function wmepn_showLandmarkNames () {
   }
   var venues = W.model.venues
   var streets = W.model.streets
-  var map = W.map
-  var showNames = wmepn_NameLayer.getVisibility() && map.getLayerByUniqueName('venues').getVisibility()
+  var showNames = wmepn_NameLayer.getVisibility() && W.map.getLayerByUniqueName('venues').getVisibility()
 
   // if checkbox unticked, reset places to original style
   if (!showNames &&
@@ -463,7 +457,7 @@ function wmepn_showLandmarkNames () {
       let haveNoAddress = !hasHN || !hasStreet
 
       if (showNames && (showAreas || showPoints || showResidentials) && (limitNames == 0 || drawnNames < limitNames) &&
-        (map.zoom >= wmepn_getId('_zoomLevel').value)) {
+        (W.map.zoom >= wmepn_getId('_zoomLevel').value)) {
 
         let wrappedText = wmepn_wordWrap(trimmedName, 30)
         let addressText = ''
@@ -513,20 +507,20 @@ function wmepn_showLandmarkNames () {
       wmepn_getId('_stLandmarkNumber').innerHTML = drawnNames
       wmepn_getId('_stLandmarkHNNumber').innerHTML = drawnHNs
 
-      if (W.selectionManager.getSelectedFeatures().length > 0 && W.selectionManager.getSelectedFeatures()[0].model.type === 'venue') {
-        let area_poi = document.getElementById('WME.PlaceNames-Square')
+      if (W.selectionManager.hasSelectedFeatures() && W.selectionManager.getSelectectionObjectType() === 'venue') {
+        let area_poi = wmepn_getId('WME.PlaceNames-Square')
         if (!area_poi) {
           let wcp = document.getElementsByClassName('additional-attributes list-unstyled')
           if (wcp && wcp.length > 0) {
             let li = document.createElement('LI')
             li.setAttribute('id', 'WME.PlaceNames-Square')
             wcp[0].appendChild(li)
-            area_poi = document.getElementById('WME.PlaceNames-Square')
+            area_poi = wmepn_getId('WME.PlaceNames-Square')
           }
         }
 
         if (area_poi) {
-          let v_id = W.selectionManager.getSelectedFeatures()[0].model.attributes.id
+          let v_id = W.selectionManager.getSelectedDataModelObjects()[0].attributes.id
           let getv = W.model.venues.getObjectById(v_id)
           if (typeof getv === 'undefined' || typeof getv.geometry.getGeodesicArea === 'undefined') {
             area_poi.innerHTML = ''
@@ -627,7 +621,7 @@ function wmepn_showLandmarkNames () {
           colored = true
         }
         // highlight places which have different name and HN
-        else if (hiliteDifHN && (colored == false) && (map.zoom >= wmepn_getId('_zoomLevel').value) && hasHN && !haveNoName &&
+        else if (hiliteDifHN && (colored == false) && (W.map.zoom >= wmepn_getId('_zoomLevel').value) && hasHN && !haveNoName &&
           ((venue.attributes.categories[0] === 'OTHER') || (venue.attributes.categories[0] === 'PROFESSIONAL_AND_PUBLIC')) &&
           (!(houseNumber == venue.attributes.name.trim() || houseNumber == venue.attributes.name.trim().split(',')[0]))) {
           poly.setAttribute('stroke', '#f00')
@@ -637,7 +631,7 @@ function wmepn_showLandmarkNames () {
       }
     }
   }
-  if (map.getLayerByUniqueName('mapComments')?.getVisibility()) {
+  if (W.map.getLayerByUniqueName('mapComments')?.getVisibility()) {
     for (let mark in W.model.mapComments.objects) {
       let comment = W.model.mapComments.getObjectById(mark)
       let poly = wmepn_getId(comment.geometry.id)
@@ -649,7 +643,7 @@ function wmepn_showLandmarkNames () {
       if (showLockLevel) trimmedName += (noTrName ? '' : '\n') + '[L' + (comment.attributes.lockRank + 1) + ']'
       if (poly !== null) {
         if (showComments && (limitNames == 0 || drawnNames < limitNames) &&
-          (map.zoom >= wmepn_getId('_zoomLevel').value)) {
+          (W.map.zoom >= wmepn_getId('_zoomLevel').value)) {
           let wrappedText = wmepn_wordWrap(trimmedName, 30)
           let commentBody = ''
           let words = 1
@@ -696,7 +690,7 @@ function wmepn_showLandmarkNames () {
   wmepn_getId('_stLandmarkHNNumber').innerHTML = '<i>' + drawnHNs + '</i> ' + I18n.t('wmepn.house_numbers', { count: drawnHNs })
 }
 
-function wmepn_getYoffset (words, length) {
+function wmepn_getYoffset(words, length) {
 
   return (words == 1) ? (-12) : (((words > 1) &&
     (length < 60)) ? (-15) :
@@ -709,18 +703,17 @@ function wmepn_getYoffset (words, length) {
                 (length < 270) ? (-50) : (-55))
 }
 
-var modifyArea = function () {
-  var selectorManager = W.selectionManager
-  if (!selectorManager.hasSelectedFeatures() ||
-    selectorManager.getSelectedFeatures()[0].model.type !== 'venue' ||
-    !selectorManager.getSelectedFeatures()[0].model.isGeometryEditable()) {
+var modifyArea = function() {
+  if (!W.selectionManager.hasSelectedFeatures() ||
+    W.selectionManager.getSelectectionObjectType() !== 'venue' ||
+    !W.selectionManager.getSelectedDataModelObjects()[0].isGeometryEditable()) {
     return
   }
 
   var requiredArea = parseInt(wmepn_getId('_minArea').value, 10) + 5
-  var SelectedLandmark = selectorManager.getSelectedFeatures()[0]
-  var oldGeometry = SelectedLandmark.geometry.clone()
-  var newGeometry = SelectedLandmark.geometry.clone()
+  var selectedLandmark = W.selectionManager.getSelectedDataModelObjects()[0]
+  var oldGeometry = selectedLandmark.geometry.clone()
+  var newGeometry = selectedLandmark.geometry.clone()
   var centerPT = newGeometry.getCentroid()
   var oldArea = oldGeometry.getGeodesicArea(W.map.getProjectionObject())
 
@@ -728,34 +721,24 @@ var modifyArea = function () {
   newGeometry.resize(scale, centerPT)
 
   var wazeActionUpdateFeatureGeometry = require('Waze/Action/UpdateFeatureGeometry')
-  var action = new wazeActionUpdateFeatureGeometry(SelectedLandmark.model, W.model.venues, oldGeometry, newGeometry)
+  var action = new wazeActionUpdateFeatureGeometry(selectedLandmark, W.model.venues, oldGeometry, newGeometry)
   W.model.actionManager.add(action)
 }
 
 /* helper function */
-function wmepn_getId (node) {
+function wmepn_getId(node) {
   return document.getElementById(node)
 }
 
 /* =========================================================================== */
 
-function initialiseLandmarkNames () {
-  var userTabs = wmepn_getId('user-info')
-  var navTabs = userTabs ? userTabs.querySelector('.nav-tabs') : null
-  var tabContent = userTabs ? userTabs.querySelector('.tab-content') : null
-
-  if (!userTabs || !navTabs || !tabContent) {
-    setTimeout(initialiseLandmarkNames, 800)
-    return
-  }
-
+function initialiseLandmarkNames() {
   // Some internationalization
   I18n.translations[I18n.locale].wmepn = wmepn_translations[I18n.locale] === undefined ? wmepn_translations[I18n.defaultLocale] : wmepn_translations[I18n.locale]
   I18n.translations[I18n.locale].layers.name[wmepn_uniqueLayerName] = wmepn_scriptName
 
   // add new box to left of the map
   var addon = document.createElement('section')
-  var map = W.map
   var translator = I18n.defaultLocale == I18n.locale ? '' : 'title="' + I18n.t('wmepn.translator') + '"'
 
   addon.id = 'landmarkname-addon'
@@ -802,13 +785,12 @@ function initialiseLandmarkNames () {
     '<div title="' + I18n.t('wmepn.show_zoom_tooltip') + '"><b>' + I18n.t('wmepn.show_zoom') + '</b><input type="number" id="_zoomLevel"/></div>'
   addon.appendChild(section)
 
-  var newtab = document.createElement('li')
-  newtab.innerHTML = '<a href="#sidepanel-landmarknames" data-toggle="tab">' + wmepn_scriptName + '</a>'
-  navTabs.appendChild(newtab)
+  const { tabLabel, tabPane } = W.userscripts.registerSidebarTab("sidepanel-assist");
 
-  addon.id = 'sidepanel-landmarknames'
-  addon.className = 'tab-pane'
-  tabContent.appendChild(addon)
+  tabLabel.innerText = wmepn_scriptName;
+  tabLabel.title = wmepn_scriptName;
+
+  tabPane.innerHTML = addon.innerHTML;
 
   // setup onclick handlers for instant update:
   wmepn_getId('_cbLandmarkColors').onclick = wmepn_resetLandmarks
@@ -841,7 +823,7 @@ function initialiseLandmarkNames () {
   }
 
   // Create PlaceName layer
-  var rlayers = map.getLayersBy('uniqueName', wmepn_uniqueLayerName)
+  var rlayers = W.map.getLayersBy('uniqueName', wmepn_uniqueLayerName)
   if (rlayers.length == 0) {
     var lname = wmepn_scriptName
     var style = new OpenLayers.Style({
@@ -872,7 +854,7 @@ function initialiseLandmarkNames () {
       styleMap: new OpenLayers.StyleMap(style),
       visibility: true
     })
-    map.addLayer(nameLayer)
+    W.map.addLayer(nameLayer)
 
     wmepn_NameLayer = nameLayer
   } else wmepn_NameLayer = rlayers[0]
@@ -1027,9 +1009,9 @@ function initialiseLandmarkNames () {
   })
 
   // register some events...
-  map.events.register('zoomend', null, wmepn_showLandmarkNames)
-  map.events.register('changelayer', null, wmepn_showLandmarkNames)
-  map.events.register('mouseout', null, wmepn_showLandmarkNames)
+  W.map.events.register('zoomend', null, wmepn_showLandmarkNames)
+  W.map.events.register('changelayer', null, wmepn_showLandmarkNames)
+  W.map.events.register('mouseout', null, wmepn_showLandmarkNames)
   W.selectionManager.events.register('selectionchanged', null, wmepn_showLandmarkNames)
 
   I18n.translations[I18n.locale].keyboard_shortcuts.groups['default'].members.WME_PlaceNames_enable =
@@ -1045,7 +1027,7 @@ function initialiseLandmarkNames () {
   W.accelerators._registerShortcuts({ 'y': 'WME_PlaceNames_increase' })
 }
 
-var enablePlaceNames = function () {
+var enablePlaceNames = function() {
   wmepn_getId('_cbLandmarkNamesEnable').click()
 }
 
