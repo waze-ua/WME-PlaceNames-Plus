@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         WME PlaceNames PLUS
-// @version      0.91
+// @version      0.92
 // @description  Show area and point place names in WME, color and highlight places by type and properties (waze-ua fork)
 // @match        https://beta.waze.com/*editor*
 // @match        https://www.waze.com/*editor*
@@ -394,10 +394,10 @@ function wmepn_showLandmarkNames() {
   // if checkbox unticked, reset places to original style
   if (!showNames &&
     !wmepn_getId('_cbLandmarkColors').checked &&
-    !wmepn_getId('_cbLandmarkHiliteNoName').checked &&
-    !wmepn_getId('_cbLandmarkHiliteNoAddress').checked &&
-    !wmepn_getId('_cbLandmarkHiliteDifHN').checked &&
-    !wmepn_getId('_cbLandmarkHiliteSmall').checked) {
+    !wmepn_getId('_cbLandmarkhighlightNoName').checked &&
+    !wmepn_getId('_cbLandmarkhighlightNoAddress').checked &&
+    !wmepn_getId('_cbLandmarkhighlightDifHN').checked &&
+    !wmepn_getId('_cbLandmarkhighlightSmall').checked) {
 
     wmepn_setDefaultVenuesAttributes('#d191d6', '#d191d6', 0.3, 1, 'none')
 
@@ -406,13 +406,13 @@ function wmepn_showLandmarkNames() {
     return
   }
 
-  var hiliteNoName = wmepn_getId('_cbLandmarkHiliteNoName').checked
+  var highlightNoName = wmepn_getId('_cbLandmarkhighlightNoName').checked
   var colorLandmarks = wmepn_getId('_cbLandmarkColors').checked
-  var hiliteNoAddress = wmepn_getId('_cbLandmarkHiliteNoAddress').checked
-  var hiliteDifHN = wmepn_getId('_cbLandmarkHiliteDifHN').checked
-  var hiliteSmall = wmepn_getId('_cbLandmarkHiliteSmall').checked
-  var hiliteLinked = wmepn_getId('_cbShowLinked').checked
-  var hiliteNotLinked = wmepn_getId('_cbShowNotLinked').checked
+  var highlightNoAddress = wmepn_getId('_cbLandmarkhighlightNoAddress').checked
+  var highlightDifHN = wmepn_getId('_cbLandmarkhighlightDifHN').checked
+  var highlightSmall = wmepn_getId('_cbLandmarkhighlightSmall').checked
+  var highlightLinked = wmepn_getId('_cbShowLinked').checked
+  var highlightNotLinked = wmepn_getId('_cbShowNotLinked').checked
   var showAddresses = wmepn_getId('_cbLandmarkShowAddresses').checked
   var minArea = wmepn_getId('_minArea').value
   var showPoints = wmepn_getId('_cbShowPoi').checked
@@ -442,8 +442,8 @@ function wmepn_showLandmarkNames() {
   for (let mark in venues.objects) {
     let venue = venues.getObjectById(mark)
     let poly = wmepn_getId(venue.geometry.id)
-    let isPoint = venue.geometry.toString().match(/^POINT/)
-    let isArea = venue.geometry.toString().match(/^POLYGON/)
+    let isPoint = (venue.geometry.toString().match(/^POINT/) != null)
+    let isArea = (venue.geometry.toString().match(/^POLYGON/) != null)
     let isRH = venue.attributes.residential
     let houseNumber = venue.attributes.houseNumber ? venue.attributes.houseNumber : ''
     let trimmedName = isRH ? houseNumber : venue.attributes.name.trim()
@@ -453,7 +453,7 @@ function wmepn_showLandmarkNames() {
       let venueStreet = streets.getObjectById(venue.attributes.streetID)
       let haveNoName = (isRH ? (houseNumber.length === 0) : noTrName)
       let hasHN = houseNumber !== '' && houseNumber != null
-      let hasStreet = venueStreet != null && venueStreet.name != null && venueStreet.name !== ''
+      let hasStreet = venueStreet != null && venueStreet.attributes.name != null && venueStreet.attributes.name !== ''
       let haveNoAddress = !hasHN || !hasStreet
 
       if (showNames && (showAreas || showPoints || showResidentials) && (limitNames == 0 || drawnNames < limitNames) &&
@@ -467,7 +467,7 @@ function wmepn_showLandmarkNames() {
           // how many words in POI name (needed to determine offsetY below)
           words = wrappedText.replace(/\n/g, ' ') + ' '
           words = words.split(/\s* \s*/).length - 1
-          addressText = hasStreet ? venueStreet.name.trim() : addressText
+          addressText = hasStreet ? venueStreet.attributes.name.trim() : addressText
           addressText = hasHN ? (hasStreet ? (addressText + ', ' + houseNumber) : houseNumber) : addressText
           addressText = (addressText.length > 0) ? ('(' + addressText + ')') : addressText
         }
@@ -586,42 +586,42 @@ function wmepn_showLandmarkNames() {
         )
 
         // highlight places with place surface area less than _minArea
-        if (hiliteSmall && isArea && (W.map.zoom >= 3) &&
+        if (highlightSmall && isArea && (W.map.zoom >= 3) &&
           (venue.geometry.getGeodesicArea(W.map.getProjectionObject()) < minArea)) {
           poly.setAttribute('fill', '#f00')
           poly.setAttribute('stroke', '#f00')
         }
         // then highlight places which have no name and not colored
-        else if (hiliteNoName && haveNoName && (colored === false)) {
+        else if (highlightNoName && haveNoName && (colored === false)) {
           poly.setAttribute('fill', '#ff8')
           poly.setAttribute('stroke', '#cc0')
         }
         // if was yellow and now not yellow, reset
-        else if (poly.getAttribute('fill') == '#ff8' && (!hiliteNoName || !haveNoName)) {
+        else if (poly.getAttribute('fill') == '#ff8' && (!highlightNoName || !haveNoName)) {
           poly.setAttribute('fill', '#d191d6')
           poly.setAttribute('stroke', '#d191d6')
           poly.setAttribute('stroke-opacity', 1)
         }
 
         // highlight places with linked Google address
-        if (hiliteLinked && venue.attributes.externalProviderIDs.length > 0) {
+        if (highlightLinked && venue.attributes.externalProviderIDs.length > 0) {
           poly.setAttribute('stroke', '#0ff')
           colored = true
         }
         // highlight places without linked Google address
-        else if (hiliteNotLinked && !isRH && venue.attributes.externalProviderIDs.length === 0) {
+        else if (highlightNotLinked && !isRH && venue.attributes.externalProviderIDs.length === 0) {
           poly.setAttribute('stroke', '#0ff')
           colored = true
         }
         // highlight places which have no address
-        else if (hiliteNoAddress && !isNature && haveNoAddress &&
+        else if (highlightNoAddress && !isNature && haveNoAddress &&
           (W.map.zoom >= wmepn_getId('_zoomLevel').value)) {
           poly.setAttribute('stroke', '#0f0')
           poly.setAttribute('stroke-dasharray', '4 7')
           colored = true
         }
         // highlight places which have different name and HN
-        else if (hiliteDifHN && (colored == false) && (W.map.zoom >= wmepn_getId('_zoomLevel').value) && hasHN && !haveNoName &&
+        else if (highlightDifHN && (colored == false) && (W.map.zoom >= wmepn_getId('_zoomLevel').value) && hasHN && !haveNoName &&
           ((venue.attributes.categories[0] === 'OTHER') || (venue.attributes.categories[0] === 'PROFESSIONAL_AND_PUBLIC')) &&
           (!(houseNumber == venue.attributes.name.trim() || houseNumber == venue.attributes.name.trim().split(',')[0]))) {
           poly.setAttribute('stroke', '#f00')
@@ -757,12 +757,12 @@ function initialiseLandmarkNames() {
   section.innerHTML =
     '<div title="' + I18n.t('wmepn.enable_script_tooltip') + '"><input type="checkbox" id="_cbLandmarkNamesEnable" /> <b>' + I18n.t('wmepn.enable_script') + '</b></div>' +
     '<div title="' + I18n.t('wmepn.color_places_tooltip') + '"><input type="checkbox" id="_cbLandmarkColors" /> <b>' + I18n.t('wmepn.color_places') + '</b></div>' +
-    '<div title="' + I18n.t('wmepn.highlight_places_tooltip') + '"><input type="checkbox" id="_cbLandmarkHiliteNoName"/> <b>' + I18n.t('wmepn.highlight_places') + '</b></div>' +
-    '<div title="' + I18n.t('wmepn.highlight_address_tooltip') + '"><input type="checkbox" id="_cbLandmarkHiliteNoAddress"/> <b>' + I18n.t('wmepn.highlight_address') + '</b></div>' +
-    '<div title="' + I18n.t('wmepn.highlight_dif_address_tooltip') + '"><input type="checkbox" id="_cbLandmarkHiliteDifHN"/> <b>' + I18n.t('wmepn.highlight_dif_address') + '</b></div>' +
+    '<div title="' + I18n.t('wmepn.highlight_places_tooltip') + '"><input type="checkbox" id="_cbLandmarkhighlightNoName"/> <b>' + I18n.t('wmepn.highlight_places') + '</b></div>' +
+    '<div title="' + I18n.t('wmepn.highlight_address_tooltip') + '"><input type="checkbox" id="_cbLandmarkhighlightNoAddress"/> <b>' + I18n.t('wmepn.highlight_address') + '</b></div>' +
+    '<div title="' + I18n.t('wmepn.highlight_dif_address_tooltip') + '"><input type="checkbox" id="_cbLandmarkhighlightDifHN"/> <b>' + I18n.t('wmepn.highlight_dif_address') + '</b></div>' +
     '<div title="' + I18n.t('wmepn.highlight_linked_tooltip') + '"><input type="checkbox" id="_cbShowLinked" /> <b>' + I18n.t('wmepn.highlight_linked') + '</b></div>' +
     '<div title="' + I18n.t('wmepn.highlight_not_linked_tooltip') + '"><input type="checkbox" id="_cbShowNotLinked" /> <b>' + I18n.t('wmepn.highlight_not_linked') + '</b></div>' +
-    '<div title="' + I18n.t('wmepn.highlight_small_tooltip') + '"><input type="checkbox" id="_cbLandmarkHiliteSmall"/> <b>' + I18n.t('wmepn.highlight_small') +
+    '<div title="' + I18n.t('wmepn.highlight_small_tooltip') + '"><input type="checkbox" id="_cbLandmarkhighlightSmall"/> <b>' + I18n.t('wmepn.highlight_small') +
     '</b><input id="_minArea" style="width: 40px;"/><b>' + I18n.t('wmepn.square_m_2') + '</b></div>' +
     '<div title="' + I18n.t('wmepn.show_address_tooltip') + '"><input type="checkbox" id="_cbLandmarkShowAddresses"/> <b>' + I18n.t('wmepn.show_address') + '</b></div>' +
     '<div title="' + I18n.t('wmepn.show_tooltip') + '"><b>' + I18n.t('wmepn.show') + ':</b></div>' +
@@ -794,10 +794,10 @@ function initialiseLandmarkNames() {
 
   // setup onclick handlers for instant update:
   wmepn_getId('_cbLandmarkColors').onclick = wmepn_resetLandmarks
-  wmepn_getId('_cbLandmarkHiliteNoName').onclick = wmepn_resetLandmarks
-  wmepn_getId('_cbLandmarkHiliteNoAddress').onclick = wmepn_resetLandmarks
-  wmepn_getId('_cbLandmarkHiliteDifHN').onclick = wmepn_resetLandmarks
-  wmepn_getId('_cbLandmarkHiliteSmall').onclick = wmepn_resetLandmarks
+  wmepn_getId('_cbLandmarkhighlightNoName').onclick = wmepn_resetLandmarks
+  wmepn_getId('_cbLandmarkhighlightNoAddress').onclick = wmepn_resetLandmarks
+  wmepn_getId('_cbLandmarkhighlightDifHN').onclick = wmepn_resetLandmarks
+  wmepn_getId('_cbLandmarkhighlightSmall').onclick = wmepn_resetLandmarks
   wmepn_getId('_cbLandmarkNamesEnable').onclick = wmepn_resetLandmarks
   wmepn_getId('_inLandmarkNameFilter').oninput = wmepn_showLandmarkNames
   wmepn_getId('_cbLandmarkLockLevel').onclick = wmepn_showLandmarkNames
@@ -865,7 +865,7 @@ function initialiseLandmarkNames() {
     var options = JSON.parse(localStorage.WMELandmarkNamesScript)
 
     wmepn_getId('_cbLandmarkColors').checked = options[1]
-    wmepn_getId('_cbLandmarkHiliteNoName').checked = options[2]
+    wmepn_getId('_cbLandmarkhighlightNoName').checked = options[2]
     if (options[3] !== undefined)
       wmepn_getId('_cbShowArea').checked = options[3]
     wmepn_NameLayer.setVisibility(options[4])
@@ -885,13 +885,13 @@ function initialiseLandmarkNames() {
     else
       wmepn_getId('_zoomLevel').value = 17
     if (options[10] !== undefined)
-      wmepn_getId('_cbLandmarkHiliteSmall').checked = options[10]
+      wmepn_getId('_cbLandmarkhighlightSmall').checked = options[10]
     if (options[11] !== undefined)
-      wmepn_getId('_cbLandmarkHiliteNoAddress').checked = options[11]
+      wmepn_getId('_cbLandmarkhighlightNoAddress').checked = options[11]
     if (options[12] !== undefined)
       wmepn_getId('_cbLandmarkShowAddresses').checked = options[12]
     if (options[13] !== undefined)
-      wmepn_getId('_cbLandmarkHiliteDifHN').checked = options[13]
+      wmepn_getId('_cbLandmarkhighlightDifHN').checked = options[13]
     if (options[14] !== undefined)
       wmepn_getId('_minArea').value = options[14]
     else
@@ -909,10 +909,10 @@ function initialiseLandmarkNames() {
 
   } else {
     wmepn_getId('_cbLandmarkColors').checked = true
-    wmepn_getId('_cbLandmarkHiliteNoName').checked = true
-    wmepn_getId('_cbLandmarkHiliteNoAddress').checked = true
-    wmepn_getId('_cbLandmarkHiliteDifHN').checked = true
-    wmepn_getId('_cbLandmarkHiliteSmall').checked = true
+    wmepn_getId('_cbLandmarkhighlightNoName').checked = true
+    wmepn_getId('_cbLandmarkhighlightNoAddress').checked = true
+    wmepn_getId('_cbLandmarkhighlightDifHN').checked = true
+    wmepn_getId('_cbLandmarkhighlightSmall').checked = true
     wmepn_getId('_cbLandmarkShowAddresses').checked = true
     wmepn_getId('_cbShowArea').checked = true
     wmepn_getId('_cbShowPoi').checked = true
@@ -945,16 +945,16 @@ function initialiseLandmarkNames() {
 
   if (typeof W.model.venues == 'undefined') {
     wmepn_getId('_cbLandmarkColors').checked = false
-    wmepn_getId('_cbLandmarkHiliteNoName').checked = false
-    wmepn_getId('_cbLandmarkHiliteNoAddress').checked = false
-    wmepn_getId('_cbLandmarkHiliteDifHN').checked = false
-    wmepn_getId('_cbLandmarkHiliteSmall').checked = false
+    wmepn_getId('_cbLandmarkhighlightNoName').checked = false
+    wmepn_getId('_cbLandmarkhighlightNoAddress').checked = false
+    wmepn_getId('_cbLandmarkhighlightDifHN').checked = false
+    wmepn_getId('_cbLandmarkhighlightSmall').checked = false
     wmepn_getId('_cbLandmarkShowAddresses').checked = false
     wmepn_getId('_cbLandmarkColors').disabled = true
-    wmepn_getId('_cbLandmarkHiliteNoName').disabled = true
-    wmepn_getId('_cbLandmarkHiliteNoAddress').disabled = true
-    wmepn_getId('_cbLandmarkHiliteDifHN').disabled = true
-    wmepn_getId('_cbLandmarkHiliteSmall').checked = true
+    wmepn_getId('_cbLandmarkhighlightNoName').disabled = true
+    wmepn_getId('_cbLandmarkhighlightNoAddress').disabled = true
+    wmepn_getId('_cbLandmarkhighlightDifHN').disabled = true
+    wmepn_getId('_cbLandmarkhighlightSmall').checked = true
     wmepn_getId('_cbShowArea').checked = true
     wmepn_getId('_cbShowPoi').checked = true
     wmepn_getId('_cbShowRH').checked = true
@@ -978,7 +978,7 @@ function initialiseLandmarkNames() {
       }
 
       options[1] = wmepn_getId('_cbLandmarkColors').checked
-      options[2] = wmepn_getId('_cbLandmarkHiliteNoName').checked
+      options[2] = wmepn_getId('_cbLandmarkhighlightNoName').checked
       options[3] = wmepn_getId('_cbShowArea').checked
       options[4] = wmepn_NameLayer.getVisibility()
       options[5] = wmepn_getId('_cbLandmarkNamesEnable').checked
@@ -986,10 +986,10 @@ function initialiseLandmarkNames() {
       options[7] = wmepn_getId('_cbLandmarkLockLevel').checked
       options[8] = wmepn_getId('_seLandmarkLimit').value
       options[9] = wmepn_getId('_zoomLevel').value
-      options[10] = wmepn_getId('_cbLandmarkHiliteSmall').checked
-      options[11] = wmepn_getId('_cbLandmarkHiliteNoAddress').checked
+      options[10] = wmepn_getId('_cbLandmarkhighlightSmall').checked
+      options[11] = wmepn_getId('_cbLandmarkhighlightNoAddress').checked
       options[12] = wmepn_getId('_cbLandmarkShowAddresses').checked
-      options[13] = wmepn_getId('_cbLandmarkHiliteDifHN').checked
+      options[13] = wmepn_getId('_cbLandmarkhighlightDifHN').checked
       options[14] = wmepn_getId('_minArea').value
       options[15] = wmepn_getId('_cbShowPoi').checked
       options[16] = wmepn_getId('_cbShowRH').checked
