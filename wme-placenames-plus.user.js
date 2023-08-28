@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         WME PlaceNames PLUS
-// @version      0.90
+// @version      0.91
 // @description  Show area and point place names in WME, color and highlight places by type and properties (waze-ua fork)
 // @match        https://beta.waze.com/*editor*
 // @match        https://www.waze.com/*editor*
@@ -785,7 +785,7 @@ function initialiseLandmarkNames() {
     '<div title="' + I18n.t('wmepn.show_zoom_tooltip') + '"><b>' + I18n.t('wmepn.show_zoom') + '</b><input type="number" id="_zoomLevel"/></div>'
   addon.appendChild(section)
 
-  const { tabLabel, tabPane } = W.userscripts.registerSidebarTab("sidepanel-assist");
+  const { tabLabel, tabPane } = W.userscripts.registerSidebarTab("sidepanel-wmepn");
 
   tabLabel.innerText = wmepn_scriptName;
   tabLabel.title = wmepn_scriptName;
