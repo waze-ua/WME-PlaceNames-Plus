@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         WME PlaceNames PLUS
-// @version      0.92
+// @version      2024.02.17.001
 // @description  Show area and point place names in WME, color and highlight places by type and properties (waze-ua fork)
 // @match        https://beta.waze.com/*editor*
 // @match        https://www.waze.com/*editor*
@@ -359,10 +359,16 @@ function wmepn_addTextFeature(pt, wrappedText, showAddresses, yOffset, style, ad
 }
 
 function wmepn_setDefaultVenuesAttributes(fill, stroke, fillOpacity, strokeOpacity, strokeDasharray) {
-  var venues = W.model.venues
+  let venues = W.model.venues
   for (let mark in venues.objects) {
-    var venue = venues.getObjectById(mark)
-    var poly = wmepn_getId(venue.geometry.id)
+    let poly = null
+    if (W.map.venueLayer.featureMap.has(mark)) {
+        let domID = W.map.venueLayer.featureMap.get(mark).geometry.id
+        poly = wmepn_getId(domID)
+    } else {
+        let venue = venues.getObjectById(mark)
+        poly = wmepn_getId(venue.getOLGeometry().id)
+    }
     if (poly !== null) {
       if (poly.getAttribute('stroke-opacity') != 1) {
         poly.setAttribute('fill', fill)
@@ -382,9 +388,9 @@ function wmepn_resetLandmarks() {
 
 function wmepn_showLandmarkNames() {
   wmepn_NameLayer.removeAllFeatures()
-  if (typeof W.model.venues == 'undefined' || wmepn_getId('_cbLandmarkNamesEnable').checked === false) {
-    wmepn_getId('_stLandmarkNumber').innerHTML = 0
-    wmepn_getId('_stLandmarkHNNumber').innerHTML = 0
+  if (typeof W.model.venues == 'undefined' || !wmepn_getId('_cbLandmarkNamesEnable') || wmepn_getId('_cbLandmarkNamesEnable').checked === false) {
+    if (wmepn_getId('_stLandmarkNumber')) wmepn_getId('_stLandmarkNumber').innerHTML = 0
+    if (wmepn_getId('_stLandmarkHNNumber')) wmepn_getId('_stLandmarkHNNumber').innerHTML = 0
     return
   }
   var venues = W.model.venues
@@ -441,14 +447,22 @@ function wmepn_showLandmarkNames() {
 
   for (let mark in venues.objects) {
     let venue = venues.getObjectById(mark)
-    let poly = wmepn_getId(venue.geometry.id)
-    let isPoint = (venue.geometry.toString().match(/^POINT/) != null)
-    let isArea = (venue.geometry.toString().match(/^POLYGON/) != null)
+    let olGeom = venue.getOLGeometry()
+    let isPoint = (olGeom.toString().match(/^POINT/) != null)
+    let isArea = (olGeom.toString().match(/^POLYGON/) != null)
     let isRH = venue.attributes.residential
     let houseNumber = venue.attributes.houseNumber ? venue.attributes.houseNumber : ''
     let trimmedName = isRH ? houseNumber : venue.attributes.name.trim()
     let noTrName = (trimmedName.length === 0)
     if (showLockLevel) trimmedName += (noTrName ? '' : '\n') + '[L' + (venue.attributes.lockRank + 1) + ']'
+
+    let poly = null
+    if (W.map.venueLayer.featureMap.has(mark)) {
+        let domID = W.map.venueLayer.featureMap.get(mark).geometry.id
+        poly = wmepn_getId(domID)
+    } else {
+        poly = wmepn_getId(olGeom.id)
+    }
     if (poly !== null) {
       let venueStreet = streets.getObjectById(venue.attributes.streetID)
       let haveNoName = (isRH ? (houseNumber.length === 0) : noTrName)
@@ -476,11 +490,11 @@ function wmepn_showLandmarkNames() {
         let addrOffset
         if (showAreas && isArea && filterMatched) {
           // Add label texts
-          //var bounds = venue.geometry.bounds;
-          //if(bounds.getWidth() * bounds.getHeight() * .3 > venue.geometry.getArea() && venue.attributes.entryExitPoints.length > 0)
+          //var bounds = olGeom.bounds;
+          //if(bounds.getWidth() * bounds.getHeight() * .3 > olGeom.getArea() && venue.attributes.entryExitPoints.length > 0)
           //    pt = venue.attributes.entryExitPoints[0].point;
           //else
-          pt = venue.geometry.getCentroid()
+          pt = olGeom.getCentroid()
 
           addrOffset = wmepn_getYoffset(words, wrappedText.length)
           wmepn_addTextFeature(pt, wrappedText, showAddresses, null, null, addressText, addrOffset)
@@ -488,7 +502,7 @@ function wmepn_showLandmarkNames() {
           drawnNames++
         }
 
-        pt = new OpenLayers.Geometry.Point(venue.geometry.x, venue.geometry.y)
+        pt = new OpenLayers.Geometry.Point(olGeom.x, olGeom.y)
         if (showPoints && isPoint && !isRH && filterMatched) {
           // Add label texts
           addrOffset = wmepn_getYoffset(words, wrappedText.length)
@@ -507,7 +521,7 @@ function wmepn_showLandmarkNames() {
       wmepn_getId('_stLandmarkNumber').innerHTML = drawnNames
       wmepn_getId('_stLandmarkHNNumber').innerHTML = drawnHNs
 
-      if (W.selectionManager.hasSelectedFeatures() && W.selectionManager.getSelectectionObjectType() === 'venue') {
+      if (W.selectionManager.hasSelectedFeatures() && W.selectionManager.getSelectedFeatures()[0].featureType === 'venue') {
         let area_poi = wmepn_getId('WME.PlaceNames-Square')
         if (!area_poi) {
           let wcp = document.getElementsByClassName('additional-attributes list-unstyled')
@@ -522,10 +536,10 @@ function wmepn_showLandmarkNames() {
         if (area_poi) {
           let v_id = W.selectionManager.getSelectedDataModelObjects()[0].attributes.id
           let getv = W.model.venues.getObjectById(v_id)
-          if (typeof getv === 'undefined' || typeof getv.geometry.getGeodesicArea === 'undefined') {
+          if (typeof getv === 'undefined' || typeof getv.getOLGeometry().getGeodesicArea === 'undefined') {
             area_poi.innerHTML = ''
           } else {
-            let square = W.model.venues.getObjectById(v_id).geometry.getGeodesicArea(W.map.getProjectionObject())
+            let square = getv.getOLGeometry().getGeodesicArea(W.map.getProjectionObject())
             area_poi.style = (square < minArea) ? 'color: red;' : 'color: black;'
             area_poi.innerHTML = I18n.t('wmepn.square') + ': ' + square.toFixed(2) + ' ' +
               I18n.t('wmepn.square_m_2') + ' (<a href=\'#\' id=\'_modifyArea\' title=\'' +
@@ -587,7 +601,7 @@ function wmepn_showLandmarkNames() {
 
         // highlight places with place surface area less than _minArea
         if (highlightSmall && isArea && (W.map.zoom >= 3) &&
-          (venue.geometry.getGeodesicArea(W.map.getProjectionObject()) < minArea)) {
+          (olGeom.getGeodesicArea(W.map.getProjectionObject()) < minArea)) {
           poly.setAttribute('fill', '#f00')
           poly.setAttribute('stroke', '#f00')
         }
@@ -634,13 +648,21 @@ function wmepn_showLandmarkNames() {
   if (W.map.getLayerByUniqueName('mapComments')?.getVisibility()) {
     for (let mark in W.model.mapComments.objects) {
       let comment = W.model.mapComments.getObjectById(mark)
-      let poly = wmepn_getId(comment.geometry.id)
-      let isPoint = comment.geometry.toString().match(/^POINT/)
-      let isArea = comment.geometry.toString().match(/^POLYGON/)
+      let olGeom = comment.getOLGeometry()
+      let isPoint = olGeom.toString().match(/^POINT/)
+      let isArea = olGeom.toString().match(/^POLYGON/)
       let isComment = comment.type === 'mapComment'
       let trimmedName = comment.attributes.subject
       let noTrName = (trimmedName.length === 0)
       if (showLockLevel) trimmedName += (noTrName ? '' : '\n') + '[L' + (comment.attributes.lockRank + 1) + ']'
+
+      let poly = null
+      if (W.map.commentLayer.featureMap.has(mark)) {
+        let domID = W.map.commentLayer.featureMap.get(mark).geometry.id
+        poly = wmepn_getId(domID)
+      } else {
+        poly = wmepn_getId(olGeom.id)
+      }
       if (poly !== null) {
         if (showComments && (limitNames == 0 || drawnNames < limitNames) &&
           (W.map.zoom >= wmepn_getId('_zoomLevel').value)) {
@@ -660,8 +682,8 @@ function wmepn_showLandmarkNames() {
           let filterMatched = (!noTrName && doFilter(trimmedName)) || (showAddresses && doFilter(commentBody))
           if (showComments && ((showAreas && isArea) || (!showAreas && !showPoints)) && filterMatched) {
             // Add label texts
-            //let bounds = comment.geometry.bounds;
-            let pt = comment.geometry.getCentroid()
+            //let bounds = olGeom.bounds;
+            let pt = olGeom.getCentroid()
 
             let offsetY = wmepn_getYoffset(words, wrappedText.length)
             offsetY += wmepn_getYoffset(commentsWords, commentBody.length)
@@ -673,7 +695,7 @@ function wmepn_showLandmarkNames() {
 
           if (showComments && ((showPoints && isPoint) || (!showAreas && !showPoints)) && filterMatched) {
             // Add label texts
-            let pt = new OpenLayers.Geometry.Point(comment.geometry.x, comment.geometry.y)
+            let pt = new OpenLayers.Geometry.Point(olGeom.x, olGeom.y)
 
             let offsetY = wmepn_getYoffset(words, wrappedText.length)
             offsetY += wmepn_getYoffset(commentsWords, commentBody.length)
@@ -712,8 +734,8 @@ var modifyArea = function() {
 
   var requiredArea = parseInt(wmepn_getId('_minArea').value, 10) + 5
   var selectedLandmark = W.selectionManager.getSelectedDataModelObjects()[0]
-  var oldGeometry = selectedLandmark.geometry.clone()
-  var newGeometry = selectedLandmark.geometry.clone()
+  var oldGeometry = selectedLandmark.getOLGeometry().clone()
+  var newGeometry = selectedLandmark.getOLGeometry().clone()
   var centerPT = newGeometry.getCentroid()
   var oldArea = oldGeometry.getGeodesicArea(W.map.getProjectionObject())
 
