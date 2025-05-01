@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         WME PlaceNames PLUS
-// @version      2024.02.17.001
+// @version      2025.05.02.001
 // @description  Show area and point place names in WME, color and highlight places by type and properties (waze-ua fork)
 // @match        https://beta.waze.com/*editor*
 // @match        https://www.waze.com/*editor*
@@ -754,7 +754,7 @@ function wmepn_getId(node) {
 
 /* =========================================================================== */
 
-function initialiseLandmarkNames() {
+async function initialiseLandmarkNames() {
   // Some internationalization
   I18n.translations[I18n.locale].wmepn = wmepn_translations[I18n.locale] === undefined ? wmepn_translations[I18n.defaultLocale] : wmepn_translations[I18n.locale]
   I18n.translations[I18n.locale].layers.name[wmepn_uniqueLayerName] = wmepn_scriptName
@@ -814,6 +814,8 @@ function initialiseLandmarkNames() {
 
   tabPane.innerHTML = addon.innerHTML;
 
+  await W.userscripts.waitForElementConnected(tabPane);
+  
   // setup onclick handlers for instant update:
   wmepn_getId('_cbLandmarkColors').onclick = wmepn_resetLandmarks
   wmepn_getId('_cbLandmarkhighlightNoName').onclick = wmepn_resetLandmarks
